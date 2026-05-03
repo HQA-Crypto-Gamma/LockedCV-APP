@@ -72,7 +72,8 @@
    - 建立 `require_login!` helper 或同等 guard。
    - `GET /account/:username` 顯示登入中的 account overview。
    - 未登入時 redirect login，並顯示 unauthorized flash。
-   - 非本人頁面先 redirect 自己的 account page；admin lookup 可等後續。
+   - 非本人頁面先 redirect 自己的 account page。
+   - Admin lookup of other accounts is deferred because it requires API-level authorization policy.
 
 7. `slim-views`
    - 建立 `layout.slim`。
@@ -86,6 +87,7 @@
    - admin 可看到管理或 role demo 入口 placeholder。
    - member 可看到 account overview。
    - `owner`、`viewer_masked`、`viewer_full` 先作為 placeholder 或 deferred，不做完整資料頁。
+   - nav 可保留 register link/label as coming soon，本階段不實作註冊流程。
 
 9. `manual-test-checklist`
    - API running。
@@ -139,7 +141,17 @@ Failure `403`:
 - Attachment/sensitive_data 完整頁面。
 - `owner`、`viewer_masked`、`viewer_full` 的完整 resource-level workflows。
 - API policy object 或完整 authorization model。
+- Admin viewing or managing other accounts through App pages.
+- Register form, account creation flow, and automatic post-registration login.
 - App 直接存取 database。
+
+## Deferred Authorization Work
+
+- Admin viewing other accounts is deferred.
+- API-level self/admin account lookup policy is deferred.
+- Resource-level `owner`、`viewer_masked`、`viewer_full` workflows are deferred.
+- This branch only uses roles for App-side navigation and UI visibility.
+- API remains the final authorization boundary for any behavior that changes or exposes server-side data.
 
 ## 本週完成定義
 
