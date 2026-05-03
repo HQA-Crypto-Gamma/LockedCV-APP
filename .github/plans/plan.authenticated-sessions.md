@@ -34,32 +34,32 @@
 
 ## Todo 清單
 
-1. `app-foundation`
+1. ✅ `app-foundation`（已完成）
    - 新增 `Gemfile`、`.ruby-version`、`config.ru`、`Rakefile`、`require_app.rb`。
    - 建立 `app/controllers/app.rb`。
    - 設定 Roda `render`、`multi_route`、`public/assets`（若本階段需要）。
    - 建立 minimal `home.slim`。
 
-2. `config-and-session`
+2. ✅ `config-and-session`（已完成）
    - 新增 `config/environments.rb`。
    - 新增 `config/secrets.example.yml`。
    - 設定 `API_URL`、`APP_URL`、`SESSION_SECRET`。
    - 使用 `Rack::Session::Cookie`。
    - 新增 `rake generate:session_secret`。
 
-3. `api-client-service`
+3. ✅ `api-client-service`（已完成）
    - 新增 `app/services/api_client.rb`。
-   - 支援 `get`、`post`、`put`（若 role demo 需要）。
-   - 集中處理 JSON parse。
-   - 對 non-2xx response raise structured error，保留 status/body。
+   - 目前支援 `post`，足夠 authentication flow。
+   - 已集中處理 JSON parse。
+   - 已對 non-2xx response raise structured error，保留 status/body。
 
-4. `authenticate-account-service`
+4. ✅ `authenticate-account-service`（已完成）
    - 新增 `app/services/authenticate_account.rb`。
-   - 呼叫 API：`POST /auth/authenticate`（base URL 由 config 提供，例如 `http://localhost:9292/api/v1`）。
+   - 呼叫 API：`POST /auth/authenticate`（base URL 由 config 提供，例如 `http://localhost:9000/api/v1`）。
    - 成功回傳 safe account hash：`id`、`username`、`email`、`roles`。
    - 失敗時 raise App-side unauthorized error。
 
-5. `auth-controller`
+5. ✅ `auth-controller`（已完成）
    - 新增 `app/controllers/auth.rb`。
    - `GET /auth/login` render login form。
    - `POST /auth/login` 驗證表單 input，呼叫 authentication service。
@@ -67,7 +67,7 @@
    - 失敗：status `400`，flash error，重新 render login。
    - `GET /auth/logout` 清除 session，flash notice，redirect login/home。
 
-6. `account-controller`
+6. ✅ `account-controller`（已完成）
    - 新增 `app/controllers/account.rb`。
    - 建立 `require_login!` helper 或同等 guard。
    - `GET /account/:username` 顯示登入中的 account overview。
@@ -75,28 +75,28 @@
    - 非本人頁面先 redirect 自己的 account page。
    - Admin lookup of other accounts is deferred because it requires API-level authorization policy.
 
-7. `slim-views`
+7. ✅ `slim-views`（已完成）
    - 建立 `layout.slim`。
    - 建立 `nav.slim`。
    - 建立 `flash_bar.slim`。
    - 建立 `home.slim`、`login.slim`、`account.slim`。
    - Views 保持 minimal/design-ready，不做正式 UI polish。
 
-8. `role-aware-view-hooks`
+8. ✅ `role-aware-view-hooks`（已完成）
    - 從 `session[:current_account]['roles']` 判斷 roles。
    - admin 可看到管理或 role demo 入口 placeholder。
    - member 可看到 account overview。
    - `owner`、`viewer_masked`、`viewer_full` 先作為 placeholder 或 deferred，不做完整資料頁。
    - nav 可保留 register link/label as coming soon，本階段不實作註冊流程。
 
-9. `manual-test-checklist`
-   - API running。
-   - App running。
-   - 成功登入後看到 account data。
-   - 錯誤密碼顯示 flash error。
-   - logout 後 session 被清除。
-   - 未登入進 account page 會 redirect login。
-   - nav 依登入狀態切換 login/account/logout。
+9. ✅ `manual-test-checklist`（已完成）
+   - 已驗證 API running。
+   - 已驗證 App route smoke checks。
+   - 已驗證成功登入後看到 account data。
+   - 已驗證錯誤密碼顯示 flash error。
+   - 已驗證 logout 後 session 被清除並顯示 notice。
+   - 已驗證未登入進 account page 會 redirect login。
+   - 已驗證 nav 依登入狀態切換 login/account/logout。
 
 ## API Contract
 

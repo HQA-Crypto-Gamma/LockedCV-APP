@@ -80,3 +80,29 @@ button {
   border: 1px solid #b7c0c7;
   border-radius: 6px;
 }
+
+.account-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 18px;
+  max-width: 640px;
+}
+
+.account-details dt {
+  font-weight: 700;
+}
+
+.account-details dd {
+  margin: 0;
+}
+
+.role-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.admin-placeholder {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #d8dee4;
+}

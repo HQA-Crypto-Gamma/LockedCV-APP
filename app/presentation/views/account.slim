@@ -1,0 +1,24 @@
+section
+  h1 Account
+
+  dl.account-details
+    dt Username
+    dd = account['username']
+
+    dt Email
+    dd = account['email']
+
+    dt Roles
+    dd
+      - roles = Array(account['roles'])
+      - if roles.empty?
+        span No roles assigned
+      - else
+        ul.role-list
+          - roles.each do |role|
+            li = role
+
+  - if roles.include?('admin')
+    section.admin-placeholder
+      h2 Admin
+      p Admin-only account lookup and management are deferred to the authorization phase.

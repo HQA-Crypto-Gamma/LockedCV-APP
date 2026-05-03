@@ -24,5 +24,18 @@ module LockedCV
         view 'home', locals: { current_account: @current_account }
       end
     end
+
+    private
+
+    def require_login!(routing)
+      return if @current_account
+
+      flash[:error] = 'Please log in to continue'
+      routing.redirect '/auth/login'
+    end
+
+    def admin?
+      Array(@current_account && @current_account['roles']).include?('admin')
+    end
   end
 end
