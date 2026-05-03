@@ -1,0 +1,8 @@
+section
+  h1 LockedCV
+  p Secure resume sharing with privacy-aware account sessions.
+
+  - if current_account
+    p Signed in as #{current_account['username']}.
+  - else
+    a.button href="/auth/login" Log in

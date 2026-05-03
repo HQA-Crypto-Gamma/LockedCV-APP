@@ -1,0 +1,12 @@
+# Temp files
+_*
+*~
+
+# Bundler
+.bundle/
+
+# Local editor config
+.vscode/
+
+# Secrets
+config/secrets.yml
