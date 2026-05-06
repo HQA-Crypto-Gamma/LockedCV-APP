@@ -1,4 +1,4 @@
-- sample_documents = [{ name: 'Product Designer CV.pdf', uploaded: 'Today, 09:42', status: 'Ready for review', risk: 'High', sensitive: 12, format: 'PDF' }, { name: 'Backend Engineer Resume.docx', uploaded: 'Apr 28, 2026', status: 'Masked', risk: 'Medium', sensitive: 7, format: 'DOCX' }, { name: 'Research Internship CV.pdf', uploaded: 'Apr 21, 2026', status: 'Shared copy', risk: 'Low', sensitive: 3, format: 'PDF' }]
+- attachments ||= []
 
 - if current_account
   section.dashboard-hero
@@ -40,20 +40,26 @@
             th Sensitive items
             th
         tbody
-          - sample_documents.each do |document|
+          - if attachments.empty?
+            tr
+              td.empty-table colspan="6" No uploaded CV files yet.
+          - attachments.each do |attachment|
+            - attachment_name = attachment['attachment_name'].to_s
+            - extension = File.extname(attachment_name).delete('.').upcase
+            - extension = 'FILE' if extension.empty?
             tr
               td
                 .file-cell
-                  span.file-badge = document[:format]
+                  span.file-badge = extension
                   div
-                    strong = document[:name]
+                    strong = attachment_name
                     span Original retained privately
-              td = document[:uploaded]
+              td = '-'
               td
-                span.status-pill class="status-pill--#{document[:status].downcase.gsub(' ', '-')}" = document[:status]
+                span.status-pill.status-pill--saved Saved
               td
-                span.risk-label class="risk-label--#{document[:risk].downcase}" = document[:risk]
-              td = document[:sensitive]
+                span.muted-value -
+              td = '-'
               td
                 a.table-action href="#" Review
 - else

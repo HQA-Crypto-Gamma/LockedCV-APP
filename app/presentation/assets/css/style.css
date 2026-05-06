@@ -372,6 +372,21 @@ button {
   background: #e7f0ff;
 }
 
+.status-pill--saved {
+  color: #274060;
+  background: #e8eef2;
+}
+
+.muted-value,
+.empty-table {
+  color: #66727d;
+}
+
+.empty-table {
+  padding: 26px 16px;
+  text-align: center;
+}
+
 .risk-label--high {
   color: #8d1f16;
   background: #fde8e7;

@@ -21,11 +21,22 @@ module LockedCV
 
       # GET /
       routing.root do
-        view 'home', locals: { current_account: @current_account }
+        attachments = current_account_attachments
+        view 'home', locals: { current_account: @current_account, attachments: }
       end
     end
 
     private
+
+    def current_account_attachments
+      return [] unless @current_account
+      return [] unless @current_account['id']
+
+      ListAttachments.new(App.config).call(account_id: @current_account['id'])
+    rescue ListAttachments::ServiceUnavailableError => e
+      App.logger.warn "ATTACHMENTS UNAVAILABLE: #{e.inspect}"
+      []
+    end
 
     def require_login!(routing)
       return if @current_account
