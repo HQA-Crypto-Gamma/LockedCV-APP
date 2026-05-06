@@ -46,7 +46,7 @@ module LockedCV
 
       session[:current_account] = account
       flash[:notice] = "Welcome back #{account['username']}!"
-      routing.redirect "/account/#{account['username']}"
+      routing.redirect '/'
     end
 
     def credentials_from(routing)
