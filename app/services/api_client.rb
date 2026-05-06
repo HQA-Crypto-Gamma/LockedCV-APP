@@ -2,6 +2,7 @@
 
 require 'http'
 require 'json'
+require 'uri'
 
 module LockedCV
   # Shared helper for HTTP calls to LockedCV-API
@@ -25,10 +26,20 @@ module LockedCV
       parse(HTTP.post(url(path), json: body))
     end
 
+    def get(path, params = {})
+      parse(HTTP.get(url_with_params(path, params)))
+    end
+
     private
 
     def url(path)
       "#{@config.API_URL}#{path}"
+    end
+
+    def url_with_params(path, params)
+      return url(path) if params.empty?
+
+      "#{url(path)}?#{URI.encode_www_form(params)}"
     end
 
     def parse(response)

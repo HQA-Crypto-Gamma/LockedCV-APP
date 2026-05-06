@@ -5,7 +5,7 @@ nav.site-nav
     - if current_account
       a href="/account/#{current_account['username']}" Account
       - if current_account['roles']&.include?('admin')
-        span Admin
+        a href="/settings" Settings
       a href="/auth/logout" Logout
     - else
       a href="/auth/login" Login

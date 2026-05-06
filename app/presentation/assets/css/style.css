@@ -106,3 +106,22 @@ button {
   padding-top: 20px;
   border-top: 1px solid #d8dee4;
 }
+
+.account-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.account-table th,
+.account-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #d8dee4;
+  text-align: left;
+  vertical-align: top;
+}
+
+.account-table th {
+  font-weight: 700;
+  background: #eef2f5;
+}
