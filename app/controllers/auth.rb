@@ -10,7 +10,7 @@ module LockedCV
       routing.is 'login' do
         # GET /auth/login
         routing.get do
-          view :login, locals: { current_account: @current_account }
+          routing.redirect '/'
         end
 
         # POST /auth/login
@@ -34,7 +34,7 @@ module LockedCV
         routing.get do
           session[:current_account] = nil
           flash[:notice] = 'You have been logged out'
-          routing.redirect '/auth/login'
+          routing.redirect '/'
         end
       end
     end

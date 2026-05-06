@@ -62,13 +62,57 @@
       p.eyebrow Privacy-first CV sharing
       h1 LockedCV
       p.public-home__lede
-        | Upload your CV, find sensitive information, and create a safer masked copy before sending it out.
-      a.button href="/auth/login" Log in
-    .public-home__preview aria-label="CV masking preview"
-      .preview-paper
-        .preview-line.preview-line--wide
-        .preview-line.preview-line--short
-        .preview-mask
-        .preview-line
-        .preview-mask.preview-mask--small
-        .preview-line.preview-line--wide
+        | Share CVs with confidence. Upload once, let LockedCV detect and mask sensitive details, and reuse a safer copy whenever you need to send it out.
+      .public-home__actions
+        a.button href="#login-modal" Log in
+        a.button.button--secondary href="#" Register
+    .public-home__preview aria-label="Animated CV masking preview"
+      .preview-resume
+        .preview-resume__header
+          .preview-avatar
+          .preview-heading-lines
+            span.preview-line.preview-line--name
+            span.preview-line.preview-line--role
+        .preview-resume__section
+          span.preview-section-title Contact
+          span.preview-sensitive.preview-sensitive--email
+            span.preview-sensitive__text abc@gmail.com
+            span.preview-sensitive__cover
+          span.preview-sensitive.preview-sensitive--phone
+            span.preview-sensitive__text 0912-345-678
+            span.preview-sensitive__cover
+          span.preview-line.preview-line--medium
+        .preview-resume__section
+          span.preview-section-title Experience
+          span.preview-line.preview-line--wide
+          span.preview-line.preview-line--medium
+          span.preview-sensitive.preview-sensitive--company
+            span.preview-sensitive__text Example Company
+            span.preview-sensitive__cover
+          span.preview-line.preview-line--short
+        .preview-resume__section
+          span.preview-section-title Education
+          span.preview-sensitive.preview-sensitive--school
+            span.preview-sensitive__text Example University
+            span.preview-sensitive__cover
+          span.preview-line.preview-line--wide
+        .preview-scan
+      .preview-status
+        span.status-dot
+        | CV masked safely
+
+  .modal#login-modal aria-label="Login dialog"
+    a.modal__backdrop href="#" aria-label="Close login dialog"
+    .modal__dialog role="dialog" aria-modal="true" aria-labelledby="login-modal-title"
+      a.modal__close href="#" aria-label="Close login dialog" ×
+      p.eyebrow Welcome back
+      h2#login-modal-title Log in to LockedCV
+      p.modal__lede Open your CV vault and keep working on safer shareable copies.
+      form.form-stack.login-form method="post" action="/auth/login"
+        label for="modal-username" Username
+        input#modal-username type="text" name="username" autocomplete="username"
+
+        label for="modal-password" Password
+        input#modal-password type="password" name="password" autocomplete="current-password"
+
+        button type="submit" Log in
