@@ -1,8 +1,74 @@
-section
-  h1 LockedCV
-  p Secure resume sharing with privacy-aware account sessions.
+- sample_documents = [{ name: 'Product Designer CV.pdf', uploaded: 'Today, 09:42', status: 'Ready for review', risk: 'High', sensitive: 12, format: 'PDF' }, { name: 'Backend Engineer Resume.docx', uploaded: 'Apr 28, 2026', status: 'Masked', risk: 'Medium', sensitive: 7, format: 'DOCX' }, { name: 'Research Internship CV.pdf', uploaded: 'Apr 21, 2026', status: 'Shared copy', risk: 'Low', sensitive: 3, format: 'PDF' }]
 
-  - if current_account
-    p Signed in as #{current_account['username']}.
-  - else
-    a.button href="/auth/login" Log in
+- if current_account
+  section.dashboard-hero
+    .dashboard-hero__content
+      p.eyebrow Hi #{current_account['username']}~ Welcome to LockedCV
+      h1 Your CV Vault
+      p.dashboard-hero__lede
+        | Upload resumes, review detected sensitive details, and keep masked versions ready for safer sharing.
+    .dashboard-hero__account
+      span Signed in as
+      strong = current_account['username']
+
+  section.workspace-grid.workspace-grid--single aria-label="CV workspace"
+    .upload-panel
+      h2 Upload a New document
+      p Add a resume to scan for names, emails, phone numbers, addresses, schools, and other details before sharing.
+      form.upload-box action="#" method="get"
+        input#cv-upload type="file" name="cv" accept=".pdf"
+        label for="cv-upload"
+          span.upload-box__icon CV
+          span.upload-box__title Choose a file
+          span.upload-box__meta Only PDF
+        button type="button" Start scan
+
+  section.document-section
+    .section-heading
+      div
+        h2 Document history
+      a.text-link href="#" View all
+
+    .document-table-wrapper
+      table.document-table
+        thead
+          tr
+            th File
+            th Uploaded
+            th Status
+            th Risk
+            th Sensitive items
+            th
+        tbody
+          - sample_documents.each do |document|
+            tr
+              td
+                .file-cell
+                  span.file-badge = document[:format]
+                  div
+                    strong = document[:name]
+                    span Original retained privately
+              td = document[:uploaded]
+              td
+                span.status-pill class="status-pill--#{document[:status].downcase.gsub(' ', '-')}" = document[:status]
+              td
+                span.risk-label class="risk-label--#{document[:risk].downcase}" = document[:risk]
+              td = document[:sensitive]
+              td
+                a.table-action href="#" Review
+- else
+  section.public-home
+    .public-home__copy
+      p.eyebrow Privacy-first CV sharing
+      h1 LockedCV
+      p.public-home__lede
+        | Upload your CV, find sensitive information, and create a safer masked copy before sending it out.
+      a.button href="/auth/login" Log in
+    .public-home__preview aria-label="CV masking preview"
+      .preview-paper
+        .preview-line.preview-line--wide
+        .preview-line.preview-line--short
+        .preview-mask
+        .preview-line
+        .preview-mask.preview-mask--small
+        .preview-line.preview-line--wide
