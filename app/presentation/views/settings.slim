@@ -1,0 +1,22 @@
+section
+  h1 Settings
+
+  table.account-table
+    thead
+      tr
+        th Username
+        th Email
+        th Roles
+    tbody
+      - accounts.each do |account|
+        tr
+          td = account['username']
+          td = account['email']
+          td
+            - roles = Array(account['roles'])
+            - if roles.empty?
+              span No roles assigned
+            - else
+              ul.role-list
+                - roles.each do |role|
+                  li = role

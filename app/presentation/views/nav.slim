@@ -1,0 +1,9 @@
+nav.site-nav
+  a.site-nav__brand href="/" LockedCV
+  - if current_account
+    .site-nav__links
+      a href="/" Home
+      a href="/account/#{current_account['username']}" Account
+      - if current_account['roles']&.include?('admin')
+        a href="/settings" Settings
+      a href="/auth/logout" Logout

@@ -1,0 +1,12 @@
+doctype html
+html lang="en"
+  head
+    meta charset="utf-8"
+    meta name="viewport" content="width=device-width, initial-scale=1"
+    title LockedCV
+    == assets(:css)
+  body
+    == render :nav, locals: { current_account: @current_account }
+    == render :flash_bar
+    main.page
+      == yield

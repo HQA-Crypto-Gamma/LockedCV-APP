@@ -1,0 +1,124 @@
+- attachments ||= []
+
+- if current_account
+  section.dashboard-hero
+    .dashboard-hero__content
+      p.eyebrow Hi #{current_account['username']}~ Welcome to LockedCV
+      h1 Your CV Vault
+      p.dashboard-hero__lede
+        | Upload resumes, review detected sensitive details, and keep masked versions ready for safer sharing.
+    .dashboard-hero__account
+      span Signed in as
+      strong = current_account['username']
+
+  section.workspace-grid.workspace-grid--single aria-label="CV workspace"
+    .upload-panel
+      h2 Upload a New document
+      p Add a resume to scan for names, emails, phone numbers, addresses, schools, and other details before sharing.
+      form.upload-box action="#" method="get"
+        input#cv-upload type="file" name="cv" accept=".pdf"
+        label for="cv-upload"
+          span.upload-box__icon CV
+          span.upload-box__title Choose a file
+          span.upload-box__meta Only PDF
+        button type="button" Start scan
+
+  section.document-section
+    .section-heading
+      div
+        h2 Document history
+      a.text-link href="#" View all
+
+    .document-table-wrapper
+      table.document-table
+        thead
+          tr
+            th File
+            th Uploaded
+            th Status
+            th Risk
+            th Sensitive items
+            th
+        tbody
+          - if attachments.empty?
+            tr
+              td.empty-table colspan="6" No uploaded CV files yet.
+          - attachments.each do |attachment|
+            - attachment_name = attachment['attachment_name'].to_s
+            - extension = File.extname(attachment_name).delete('.').upcase
+            - extension = 'FILE' if extension.empty?
+            tr
+              td
+                .file-cell
+                  span.file-badge = extension
+                  div
+                    strong = attachment_name
+                    span Original retained privately
+              td = '-'
+              td
+                span.status-pill.status-pill--saved Saved
+              td
+                span.muted-value -
+              td = '-'
+              td
+                a.table-action href="#" Review
+- else
+  section.public-home
+    .public-home__copy
+      p.eyebrow Privacy-first CV sharing
+      h1 LockedCV
+      p.public-home__lede
+        | Share CVs with confidence. Upload once, let LockedCV detect and mask sensitive details, and reuse a safer copy whenever you need to send it out.
+      .public-home__actions
+        a.button href="#login-modal" Log in
+        a.button.button--secondary href="#" Register
+    .public-home__preview aria-label="Animated CV masking preview"
+      .preview-resume
+        .preview-resume__header
+          .preview-avatar
+          .preview-heading-lines
+            span.preview-line.preview-line--name
+            span.preview-line.preview-line--role
+        .preview-resume__section
+          span.preview-section-title Contact
+          span.preview-sensitive.preview-sensitive--email
+            span.preview-sensitive__text abc@gmail.com
+            span.preview-sensitive__cover
+          span.preview-sensitive.preview-sensitive--phone
+            span.preview-sensitive__text 0912-345-678
+            span.preview-sensitive__cover
+          span.preview-line.preview-line--medium
+        .preview-resume__section
+          span.preview-section-title Experience
+          span.preview-line.preview-line--wide
+          span.preview-line.preview-line--medium
+          span.preview-sensitive.preview-sensitive--company
+            span.preview-sensitive__text Example Company
+            span.preview-sensitive__cover
+          span.preview-line.preview-line--short
+        .preview-resume__section
+          span.preview-section-title Education
+          span.preview-sensitive.preview-sensitive--school
+            span.preview-sensitive__text Example University
+            span.preview-sensitive__cover
+          span.preview-line.preview-line--wide
+        .preview-scan
+      .preview-status
+        span.status-dot
+        | CV masked safely
+
+  .modal#login-modal aria-label="Login dialog"
+    a.modal__backdrop href="#" aria-label="Close login dialog"
+    .modal__dialog role="dialog" aria-modal="true" aria-labelledby="login-modal-title"
+      a.modal__close href="#" aria-label="Close login dialog" ×
+      p.eyebrow Welcome back
+      h2#login-modal-title Log in to LockedCV
+      p.modal__lede Open your CV vault and keep working on safer shareable copies.
+      form.form-stack.login-form method="post" action="/auth/login"
+        label for="modal-username" Username
+        input#modal-username type="text" name="username" autocomplete="username"
+
+        label for="modal-password" Password
+        input#modal-password type="password" name="password" autocomplete="current-password"
+
+        button type="submit" Log in

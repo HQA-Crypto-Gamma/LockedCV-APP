@@ -1,0 +1,52 @@
+# frozen_string_literal: true
+
+require 'roda'
+require 'slim'
+require 'slim/include'
+
+module LockedCV
+  # Base class for the LockedCV Web App
+  class App < Roda
+    plugin :render, engine: 'slim', views: 'app/presentation/views'
+    plugin :assets, css: 'style.css', path: 'app/presentation/assets'
+    plugin :multi_route
+    plugin :flash
+
+    route do |routing|
+      response['Content-Type'] = 'text/html; charset=utf-8'
+      @current_account = session[:current_account]
+
+      routing.assets
+      routing.multi_route
+
+      # GET /
+      routing.root do
+        attachments = current_account_attachments
+        view 'home', locals: { current_account: @current_account, attachments: }
+      end
+    end
+
+    private
+
+    def current_account_attachments
+      return [] unless @current_account
+      return [] unless @current_account['id']
+
+      ListAttachments.new(App.config).call(account_id: @current_account['id'])
+    rescue ListAttachments::ServiceUnavailableError => e
+      App.logger.warn "ATTACHMENTS UNAVAILABLE: #{e.inspect}"
+      []
+    end
+
+    def require_login!(routing)
+      return if @current_account
+
+      flash[:error] = 'Please log in to continue'
+      routing.redirect '/auth/login'
+    end
+
+    def admin?
+      Array(@current_account && @current_account['roles']).include?('admin')
+    end
+  end
+end
