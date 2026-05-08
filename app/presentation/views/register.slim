@@ -1,0 +1,56 @@
+- form_data ||= {}
+
+section.login-page
+  .login-panel
+    p.eyebrow Create your vault
+    h1 Register
+    p.login-panel__lede Set up a LockedCV account so your resumes and masked copies stay tied to your private workspace.
+
+    form.form-stack.login-form method="post" action="/auth/register"
+      label for="register-username" Username
+      input#register-username type="text" name="username" autocomplete="username" value=form_data['username']
+
+      label for="register-email" Email
+      input#register-email type="email" name="email" autocomplete="email" value=form_data['email']
+
+      label for="register-phone" Phone number
+      input#register-phone type="tel" name="phone_number" autocomplete="tel" value=form_data['phone_number']
+
+      label for="register-password" Password
+      input#register-password type="password" name="password" autocomplete="new-password"
+
+      label for="register-password-confirmation" Confirm password
+      input#register-password-confirmation type="password" name="password_confirmation" autocomplete="new-password"
+
+      button type="submit" Create account
+
+    p.form-hint
+      | Already have an account?
+      a href="/#login-modal" Log in
+
+  .login-story aria-label="LockedCV registration preview"
+    .story-copy
+      p.eyebrow Start protected
+      h2 Build a CV vault before your next share.
+      p Register, upload a PDF resume, and review the private details LockedCV can mask before you send it out.
+
+    .cv-animation aria-hidden="true"
+      .cv-sheet
+        .cv-header
+          .cv-avatar
+          .cv-title-lines
+            span.cv-line.cv-line--name
+            span.cv-line.cv-line--role
+        .cv-section
+          span.cv-line.cv-line--wide
+          span.cv-mask.cv-mask--email
+          span.cv-line.cv-line--medium
+          span.cv-line.cv-line--short
+        .cv-section
+          span.cv-mask.cv-mask--phone
+          span.cv-line.cv-line--wide
+          span.cv-mask.cv-mask--address
+        .scan-beam
+      .animation-status
+        span.status-dot
+        | Ready to protect

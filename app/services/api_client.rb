@@ -26,6 +26,10 @@ module LockedCV
       parse(HTTP.post(url(path), json: body))
     end
 
+    def put(path, body)
+      parse(HTTP.put(url(path), json: body))
+    end
+
     def get(path, params = {})
       parse(HTTP.get(url_with_params(path, params)))
     end
