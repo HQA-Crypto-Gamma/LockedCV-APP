@@ -668,6 +668,17 @@ button {
   border-radius: 6px;
 }
 
+.form-hint {
+  margin: 16px 0 0;
+  color: #4d5a64;
+}
+
+.form-hint a {
+  margin-left: 6px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .login-page {
   display: grid;
   grid-template-columns: minmax(300px, 0.78fr) minmax(420px, 1.22fr);
@@ -937,6 +948,21 @@ button {
 .account-table th {
   font-weight: 700;
   background: #eef2f5;
+}
+
+.role-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.role-form select {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #b7c0c7;
+  border-radius: 6px;
+  background: #ffffff;
 }
 
 @media (max-width: 780px) {

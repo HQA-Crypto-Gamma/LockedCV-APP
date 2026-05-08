@@ -6,17 +6,24 @@ section
       tr
         th Username
         th Email
-        th Roles
+        th Role
+        th
     tbody
       - accounts.each do |account|
+        - roles = Array(account['roles'])
+        - current_role = roles.include?('admin') ? 'admin' : 'member'
         tr
           td = account['username']
           td = account['email']
           td
-            - roles = Array(account['roles'])
+            form.role-form method="post" action="/settings"
+              input type="hidden" name="username" value=account['username']
+              select name="role" aria-label="Role for #{account['username']}"
+                option value="member" selected=(current_role == 'member') Member
+                option value="admin" selected=(current_role == 'admin') Admin
+              button type="submit" Update
+          td
             - if roles.empty?
-              span No roles assigned
+              span.muted-value No role yet
             - else
-              ul.role-list
-                - roles.each do |role|
-                  li = role
+              span.muted-value = roles.join(', ')
