@@ -1,24 +1,41 @@
-section
-  h1 Account
+- editing ||= false
 
-  dl.account-details
-    dt Username
-    dd = account['username']
-
-    dt Email
-    dd = account['email']
-
-    dt Roles
-    dd
-      - roles = Array(account['roles'])
-      - if roles.empty?
-        span No roles assigned
+section.profile-page
+  .section-heading
+    div
+      h1 Profile
+    .profile-actions
+      - if editing
+        button type="submit" form="profile-form" Save profile
+        a.button.button--secondary href="/account/#{account['username']}" Cancel
       - else
-        ul.role-list
-          - roles.each do |role|
-            li = role
+        a.button.button--secondary href="/account/#{account['username']}/edit" Edit profile
 
-  - if roles.include?('admin')
-    section.admin-placeholder
-      h2 Admin
-      p Admin-only account lookup and management are deferred to the authorization phase.
+  form#profile-form.form-stack.profile-form method="post" action="/account/#{account['username']}"
+    label for="profile-username" Username
+    input#profile-username type="text" value=account['username'] disabled=true
+
+    .profile-form-grid
+      .register-form-section
+        label.required-field for="profile-email" Email
+        input#profile-email type="email" name="email" autocomplete="email" value=account['email'] disabled=!editing
+
+        label for="profile-first-name" First name
+        input#profile-first-name type="text" name="first_name" autocomplete="given-name" value=account['first_name'] disabled=!editing
+
+        label for="profile-last-name" Last name
+        input#profile-last-name type="text" name="last_name" autocomplete="family-name" value=account['last_name'] disabled=!editing
+
+        label for="profile-phone" Phone number
+        input#profile-phone type="tel" name="phone_number" autocomplete="tel" value=account['phone_number'] disabled=!editing
+
+      .register-form-section
+        label for="profile-birthday" Birthday
+        input#profile-birthday type="text" name="birthday" autocomplete="bday" placeholder="YYYY-MM-DD" value=account['birthday'] disabled=!editing
+
+        label for="profile-address" Address
+        textarea#profile-address name="address" autocomplete="street-address" rows="2" disabled=!editing
+          = account['address']
+
+        label for="profile-identification-numbers" Identification numbers
+        input#profile-identification-numbers type="text" name="identification_numbers" value=account['identification_numbers'] disabled=!editing
