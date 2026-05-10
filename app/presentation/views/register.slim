@@ -1,56 +1,49 @@
 - form_data ||= {}
 
-section.login-page
-  .login-panel
+section.register-page
+  .register-panel
     p.eyebrow Create your vault
     h1 Register
-    p.login-panel__lede Set up a LockedCV account so your resumes and masked copies stay tied to your private workspace.
+    p.register-panel__lede Set up a LockedCV account so your resumes and masked copies stay tied to your private workspace.
+    p.required-note * Required fields
 
     form.form-stack.login-form method="post" action="/auth/register"
-      label for="register-username" Username
-      input#register-username type="text" name="username" autocomplete="username" value=form_data['username']
+      .register-form-grid
+        .register-form-section
+          label.required-field for="register-username" Username
+          input#register-username type="text" name="username" autocomplete="username" value=form_data['username']
 
-      label for="register-email" Email
-      input#register-email type="email" name="email" autocomplete="email" value=form_data['email']
+          label for="register-first-name" First name
+          input#register-first-name type="text" name="first_name" autocomplete="given-name" value=form_data['first_name']
 
-      label for="register-phone" Phone number
-      input#register-phone type="tel" name="phone_number" autocomplete="tel" value=form_data['phone_number']
+          label for="register-phone" Phone number
+          input#register-phone type="tel" name="phone_number" autocomplete="tel" value=form_data['phone_number']
 
-      label for="register-password" Password
-      input#register-password type="password" name="password" autocomplete="new-password"
+          label.required-field for="register-password" Password
+          input#register-password type="password" name="password" autocomplete="new-password"
 
-      label for="register-password-confirmation" Confirm password
-      input#register-password-confirmation type="password" name="password_confirmation" autocomplete="new-password"
+          label for="register-address" Address
+          textarea#register-address name="address" autocomplete="street-address" rows="2"
+            = form_data['address']
+
+        .register-form-section
+          label.required-field for="register-email" Email
+          input#register-email type="email" name="email" autocomplete="email" value=form_data['email']
+
+          label for="register-last-name" Last name
+          input#register-last-name type="text" name="last_name" autocomplete="family-name" value=form_data['last_name']
+
+          label for="register-birthday" Birthday
+          input#register-birthday type="text" name="birthday" autocomplete="bday" placeholder="YYYY-MM-DD" value=form_data['birthday']
+
+          label.required-field for="register-password-confirmation" Confirm password
+          input#register-password-confirmation type="password" name="password_confirmation" autocomplete="new-password"
+
+          label for="register-identification-numbers" Identification numbers
+          input#register-identification-numbers type="text" name="identification_numbers" value=form_data['identification_numbers']
 
       button type="submit" Create account
 
     p.form-hint
       | Already have an account?
       a href="/#login-modal" Log in
-
-  .login-story aria-label="LockedCV registration preview"
-    .story-copy
-      p.eyebrow Start protected
-      h2 Build a CV vault before your next share.
-      p Register, upload a PDF resume, and review the private details LockedCV can mask before you send it out.
-
-    .cv-animation aria-hidden="true"
-      .cv-sheet
-        .cv-header
-          .cv-avatar
-          .cv-title-lines
-            span.cv-line.cv-line--name
-            span.cv-line.cv-line--role
-        .cv-section
-          span.cv-line.cv-line--wide
-          span.cv-mask.cv-mask--email
-          span.cv-line.cv-line--medium
-          span.cv-line.cv-line--short
-        .cv-section
-          span.cv-mask.cv-mask--phone
-          span.cv-line.cv-line--wide
-          span.cv-mask.cv-mask--address
-        .scan-beam
-      .animation-status
-        span.status-dot
-        | Ready to protect
