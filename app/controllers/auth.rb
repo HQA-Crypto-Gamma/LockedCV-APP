@@ -6,14 +6,18 @@ require_relative 'app'
 module LockedCV
   # Authentication routes for the LockedCV Web App
   class App < Roda
-    REGISTRATION_FIELDS = %w[username email phone_number password password_confirmation].freeze
+    REGISTRATION_FIELDS = %w[
+      username email phone_number first_name last_name birthday address
+      identification_numbers password password_confirmation
+    ].freeze
+    API_REGISTRATION_FIELDS = REGISTRATION_FIELDS - %w[password_confirmation]
 
     # rubocop:disable Metrics/BlockLength
     route('auth') do |routing|
       routing.is 'login' do
         # GET /auth/login
         routing.get do
-          routing.redirect '/'
+          routing.redirect '/#login-modal'
         end
 
         # POST /auth/login
@@ -21,14 +25,12 @@ module LockedCV
           login_account(routing)
         rescue AuthenticateAccount::UnauthorizedError => e
           App.logger.warn "LOGIN FAILED: #{e.inspect}"
-          flash.now[:error] = 'Username and password did not match our records'
-          response.status = 403
-          view :login, locals: { current_account: @current_account }
+          flash[:error] = 'Username and password did not match our records'
+          routing.redirect '/#login-modal'
         rescue AuthenticateAccount::ServiceUnavailableError => e
           App.logger.error "AUTHENTICATION SERVICE UNAVAILABLE: #{e.inspect}"
-          flash.now[:error] = 'Authentication service is temporarily unavailable'
-          response.status = 503
-          view :login, locals: { current_account: @current_account }
+          flash[:error] = 'Authentication service is temporarily unavailable'
+          routing.redirect '/#login-modal'
         end
       end
 
@@ -80,7 +82,7 @@ module LockedCV
     def register_account(routing)
       form_data = registration_data_from(routing)
       ensure_password_confirmation!(form_data)
-      account = RegisterAccount.new(App.config).call(**registration_payload(form_data))
+      account = RegisterAccount.new(App.config).call(registration_payload(form_data))
 
       flash[:notice] = "Account #{account['username']} created. Please log in."
       routing.redirect '/#login-modal'
@@ -100,12 +102,7 @@ module LockedCV
     end
 
     def registration_payload(form_data)
-      {
-        username: form_data['username'],
-        email: form_data['email'],
-        phone_number: form_data['phone_number'],
-        password: form_data['password']
-      }
+      API_REGISTRATION_FIELDS.to_h { |field| [field.to_sym, form_data[field]] }
     end
 
     def ensure_password_confirmation!(form_data)

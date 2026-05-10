@@ -42,7 +42,7 @@ module LockedCV
       return if @current_account
 
       flash[:error] = 'Please log in to continue'
-      routing.redirect '/auth/login'
+      routing.redirect '/#login-modal'
     end
 
     def admin?
