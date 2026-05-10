@@ -21,6 +21,11 @@ module LockedCV
       plugin :common_logger, $stdout
     end
 
+    configure :production do
+      plugin :redirect_http_to_https
+      plugin :hsts
+    end
+
     LOGGER = Logger.new($stderr)
     def self.logger = LOGGER
 

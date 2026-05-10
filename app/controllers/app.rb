@@ -16,6 +16,8 @@ module LockedCV
       response['Content-Type'] = 'text/html; charset=utf-8'
       @current_account = session[:current_account]
 
+      routing.redirect_http_to_https if App.environment == :production
+
       routing.assets
       routing.multi_route
 
