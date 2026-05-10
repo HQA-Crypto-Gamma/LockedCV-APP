@@ -661,11 +661,72 @@ button {
   max-width: 360px;
 }
 
-.form-stack input {
+.register-page .form-stack {
+  max-width: none;
+}
+
+.form-stack input,
+.form-stack textarea {
+  box-sizing: border-box;
+  width: 100%;
   min-height: 38px;
   padding: 8px 10px;
   border: 1px solid #b7c0c7;
   border-radius: 6px;
+  font: inherit;
+}
+
+.form-stack textarea {
+  resize: vertical;
+}
+
+.required-field::after {
+  content: " *";
+  color: #8d1f16;
+  font-weight: 700;
+}
+
+.register-page {
+  display: flex;
+  justify-content: center;
+}
+
+.register-panel {
+  width: min(980px, 100%);
+  padding: 30px;
+  border: 1px solid #d9e0e5;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.register-panel h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1;
+}
+
+.register-panel__lede {
+  max-width: 680px;
+  margin: 12px 0 8px;
+  color: #4d5a64;
+}
+
+.required-note {
+  margin: 0 0 22px;
+  color: #66727d;
+  font-size: 0.92rem;
+}
+
+.register-form-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(300px, 1.1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.register-form-section {
+  display: grid;
+  gap: 12px;
 }
 
 .form-hint {
@@ -980,6 +1041,7 @@ button {
   .public-home,
   .workspace-grid,
   .upload-box,
+  .register-form-grid,
   .login-page {
     grid-template-columns: 1fr;
   }
