@@ -1,43 +1,45 @@
-- nav_item_style = 'display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 3px 8px; border: 1px solid transparent; border-radius: 6px; color: #146276; text-decoration: none; line-height: 1;'
-- nav_trigger_style = "#{nav_item_style} cursor: pointer; list-style: none;"
 - icon_size = 16
 
 nav.site-nav
   a.site-nav__brand href="/" LockedCV
   .site-nav__links
-    a.nav-link href="/" style=nav_item_style
+    a.nav-link href="/"
       svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
         path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 2 8h1v6.5A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5V8h1a.5.5 0 0 0 .354-.854l-6-6zM4 14.5V7.707l4-4 4 4V14.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z"
       span Home
     - if current_account
       - account_path = "/account/#{current_account['username']}"
       - if current_account['roles']&.include?('admin')
-        a.nav-link href="/settings" style=nav_item_style
+        a.nav-link href="/settings"
           svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
             path d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.8 11.8 0 0 0 2.517 2.453c.386.273.744.482 1.041.623.144.068.293.126.429.166.13.039.279.076.407.076s.277-.037.407-.076c.136-.04.285-.098.43-.166.296-.141.654-.35 1.04-.623a11.8 11.8 0 0 0 2.517-2.453c1.678-2.195 3.061-5.513 2.465-9.99a1.54 1.54 0 0 0-1.044-1.263 62.5 62.5 0 0 0-2.887-.87C9.843.266 8.69 0 8 0zm0 1c.54 0 1.66.24 2.66.511 1.02.276 2.04.6 2.84.86.24.079.41.289.444.54.548 4.113-.73 7.09-2.247 9.074A10.8 10.8 0 0 1 9.76 14.13c-.342.242-.63.406-.86.515A2.2 2.2 0 0 1 8 15a2.2 2.2 0 0 1-.9-.355 7.8 7.8 0 0 1-.86-.515 10.8 10.8 0 0 1-1.937-2.145C2.786 10.001 1.508 7.024 2.056 2.91a.54.54 0 0 1 .444-.54 61.5 61.5 0 0 1 2.84-.86C6.34 1.24 7.46 1 8 1z"
           span Admin
-      details.account-menu style="position: relative;"
-        summary.account-menu__trigger style=nav_trigger_style
+      details.account-menu
+        summary.account-menu__trigger
           svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
             path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
           span Profile
-        .account-menu__panel style="position: absolute; top: calc(100% + 8px); right: 0; z-index: 10; display: grid; min-width: 240px; overflow: hidden; padding: 0; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 16px 38px rgb(29 38 48 / 14%);"
-          a.account-menu__item href=account_path style="display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 16px; border-bottom: 1px solid #edf1f3; color: #6b4aa0; text-decoration: none;"
+        .account-menu__panel
+          a.account-menu__item href=account_path
             svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
               path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2.15-2.15L13.354.498a.5.5 0 0 1 .707 0l1.44 1.442zM13.752 4.396 11.603 2.247 4.94 8.91a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.514z"
               path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"
             span Edit profile
-          a.account-menu__item href="/auth/logout" style="display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 16px; color: #6b4aa0; text-decoration: none;"
+          a.account-menu__item href="#{account_path}/password"
+            svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
+              path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1 1a.5.5 0 0 1-.708 0L13.5 9.207l-.646.647a.5.5 0 0 1-.708 0L11.5 9.207l-.646.647A.5.5 0 0 1 10.5 10H6.663a3.5 3.5 0 0 1-3.163 1.5zM2 8a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0z"
+            span Change password
+          a.account-menu__item href="/auth/logout"
             svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
               path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"
               path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"
             span Logout
     - else
-      a.nav-link href="#login-modal" style=nav_item_style
+      a.nav-link href="#login-modal"
         svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
           path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
         span Log in
-      a.nav-link href="/auth/register" style=nav_item_style
+      a.nav-link href="/auth/register"
         svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
           path d="M8 4a.5.5 0 0 1 .5.5V7H11a.5.5 0 0 1 0 1H8.5v2.5a.5.5 0 0 1-1 0V8H5a.5.5 0 0 1 0-1h2.5V4.5A.5.5 0 0 1 8 4z"
           path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM2 8a6 6 0 1 1 12 0A6 6 0 0 1 2 8z"
