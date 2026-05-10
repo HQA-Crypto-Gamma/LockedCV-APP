@@ -66,20 +66,35 @@ username: alan-turing
 password: alan-secret
 ```
 
+## Routes and Features
+
+The App currently includes:
+
+- public home page with login modal
+- account registration page
+- login and logout flow
+- account overview page
+- document history loaded from the API
+- admin settings page for listing accounts and updating system roles
+- flash messages and role-aware navigation
+
+Current routes:
+
+- `GET /`
+- `POST /auth/login`
+- `GET /auth/register`
+- `POST /auth/register`
+- `GET /account/:username`
+- `GET /settings`
+- `POST /settings`
+- `GET /auth/logout`
+
 ## Scope
 
-This branch implements authenticated sessions with minimal, design-ready Slim
-views:
-
-- home page
-- login form
-- account overview
-- logout
-- flash messages
-- role-aware navigation hooks
-
-Formal UI polish, registration, admin account lookup, and resource-level
-authorization workflows are deferred.
+This branch has the main authenticated Web App foundation in place. Registration
+and admin lookup/update flows exist, but account verification, stronger session
+security, HTTPS enforcement, and resource-level authorization still need to be
+strengthened.
 
 ## Checks
 

@@ -30,11 +30,17 @@ form handling, and Slim view rendering.
 
 ## Expected Routes
 
-- `GET /` renders a minimal home page.
-- `GET /auth/login` renders the login form.
+- `GET /` renders the public home page or the logged-in CV vault.
 - `POST /auth/login` authenticates against `LockedCV-API`.
+- `GET /auth/register` renders the registration form.
+- `POST /auth/register` creates an account through `LockedCV-API`.
 - `GET /account/:username` renders the logged-in account overview.
+- `GET /settings` renders admin account settings.
+- `POST /settings` updates a user's system role through `LockedCV-API`.
 - `GET /auth/logout` clears session account data.
+
+`GET /auth/login` currently redirects to `/`; the login form is presented from
+the home page login modal.
 
 ## API Contract
 
@@ -68,21 +74,32 @@ Expected failure response:
 }
 ```
 
+Other API-facing services call:
+
+- `POST /api/v1/accounts` for registration.
+- `GET /api/v1/accounts?current_account_id=...` for admin account listing.
+- `PUT /api/v1/accounts/:username/system_roles/:role_name` for admin role
+  updates.
+- `GET /api/v1/accounts/:account_id/attachments` for document history.
+
 ## Development Boundary
 
-This branch should complete the authenticated-session foundation before final
-visual design work:
+This branch has the authenticated-session Web App foundation in place:
 
 - Roda app bootstrapping
 - API service client
 - login/logout flow
+- basic registration flow
+- admin settings flow
+- document history from the API
 - cookie-backed session
 - flash notices/errors
-- minimal Slim views
 - role-aware view hooks
 
-Formal UI polish, dashboard design, attachment/sensitive-data pages, and full
-resource-level authorization can be completed after this foundation is working.
+Registration and admin lookup/update are implemented, but account verification,
+stronger session security, HTTPS enforcement, WebMock service tests,
+distributed session storage, and full resource-level authorization still need
+to be strengthened.
 
 ## Validation
 
