@@ -4,6 +4,9 @@ require 'figaro'
 require 'logger'
 require 'rack/session'
 require 'roda'
+require_relative '../require_app'
+
+require_app('lib')
 
 module LockedCV
   # Configuration for the LockedCV Web App
@@ -29,12 +32,13 @@ module LockedCV
     LOGGER = Logger.new($stderr)
     def self.logger = LOGGER
 
+    SecureMessage.setup(ENV.delete('MSG_KEY'))
+
     require 'pry'
 
     ONE_MONTH = 30 * 24 * 60 * 60
-    use Rack::Session::Cookie,
-        expire_after: ONE_MONTH,
-        secret: config.SESSION_SECRET
+    use Rack::Session::Pool,
+        expire_after: ONE_MONTH
 
     configure :development, :test do
       logger.level = Logger::ERROR

@@ -29,9 +29,17 @@ end
 namespace :generate do
   desc 'Create cookie session secret'
   task :session_secret do
-    require 'base64'
-    require 'rbnacl'
+    require_app('lib', config: false)
 
-    puts "New SESSION_SECRET (base64): #{Base64.urlsafe_encode64(RbNaCl::Random.random_bytes(64))}"
+    puts "New SESSION_SECRET (base64): #{LockedCV::SecureSession.generate_secret}"
+  end
+end
+
+namespace :newkey do
+  desc 'Create rbnacl SecretBox key for SecureMessage'
+  task :msg do
+    require_app('lib', config: false)
+
+    puts "New MSG_KEY (base64): #{LockedCV::SecureMessage.generate_key}"
   end
 end

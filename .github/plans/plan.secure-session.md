@@ -22,12 +22,14 @@
   - `GET /settings`
   - `POST /settings`
   - 透過 API 列出帳號並更新 system role。
+- 已完成 production HTTPS redirect 與 HSTS。
+- 已完成 Heroku Procfile 與基本 production config。
+- 已完成 secure messaging library 與 secure session wrapper。
+- 已將 session storage 從 cookie session 改成 `Rack::Session::Pool`。
 - 待強化項目：
-  - HTTPS redirect 與 HSTS 尚未明確完成。
   - services 尚未用 WebMock 隔離外部 API request。
-  - session data 目前仍需要加密保護。
-  - session storage 尚未切換成 dev/test pool + production Redis。
-  - Heroku production config 需要對齊已部署 API URL、Redis、session secret、message key。
+  - production Redis distributed session store 尚未完成，下一階段處理。
+  - Heroku production config 仍需要對齊 Redis 相關設定。
 
 ## 實作策略（分階段）
 
@@ -36,15 +38,16 @@
 3. **Registration workflow review**：確認 registration form、controller、service object、API contract 與 error handling 都符合本週要求。
 4. **Secure messaging**：建立 secure messaging library，使用 `MSG_KEY` 與 NaCl `SimpleBox` 加密/解密訊息。
 5. **Secure session wrapper**：建立 secure session library，所有 session set/get 都透過 secure messaging library。
-6. **Session pool and Redis store**：development/test 使用 pooling strategy，production 使用 Heroku RedisCloud。
-7. **Heroku deployment**：建立 App dyno，設定 production secrets，確認 App 指向 deployed API。
-8. **Production smoke checks**：部署後確認 registration、login、settings role update 等使用者流程可寫入雲端資源。
+6. **Session pool store**：先使用 `Rack::Session::Pool`，讓 session data 留在 server-side pool 並透過 secure messaging 加密。
+7. **Production Redis store**：下一階段再加入 Heroku RedisCloud / Redis distributed session store。
+8. **Heroku deployment**：建立 App dyno，設定 production secrets，確認 App 指向 deployed API。
+9. **Production smoke checks**：部署後確認 registration、login、settings role update 等使用者流程可寫入雲端資源。
 
 ## Todo 清單
 
 1. `app-https-hsts`
-   - ⬜ 在 production 環境把 HTTP request redirect 到 HTTPS。
-   - ⬜ 為所有 production response 加上 `Strict-Transport-Security` header。
+   - ✅ 在 production 環境把 HTTP request redirect 到 HTTPS。
+   - ✅ 為所有 production response 加上 `Strict-Transport-Security` header。
    - ⬜ 確認 Heroku proxy header（例如 `X-Forwarded-Proto`）能被正確判斷。
    - ⬜ 補 request/integration spec：HTTP 會被 redirect，HTTPS 會通過。
 
@@ -64,33 +67,33 @@
    - 待複查：確認 error messages 與 redirect flow 在 API unavailable 時仍可讀。
 
 4. `secure-messaging-library`
-   - ⬜ 新增 secure messaging library。
-   - ⬜ 從 environment variable `MSG_KEY` 讀取 secret key。
-   - ⬜ 使用 NaCl `SimpleBox` 進行所有加密/解密。
-   - ⬜ 設計 message format，至少包含 nonce 與 ciphertext。
+   - ✅ 新增 secure messaging library。
+   - ✅ 從 environment variable `MSG_KEY` 讀取 secret key。
+   - ✅ 使用 NaCl `SimpleBox` 進行所有加密/解密。
+   - ✅ 使用 urlsafe base64 ciphertext string 作為 message format。
    - ⬜ 解密失敗時回傳明確錯誤，不讓壞資料變成有效 session。
    - ⬜ 補 unit tests：round trip、不同 key 失敗、tampered message 失敗。
 
 5. `secure-session-library`
-   - ⬜ 新增 secure session library。
-   - ⬜ 提供安全的 set/get/delete session variables helper。
-   - ⬜ 所有 crypto 都只透過 secure messaging library，不在 controller 直接加密。
-   - ⬜ 將 `current_account` 等 session value 改由 secure session library 存取。
+   - ✅ 新增 secure session library。
+   - ✅ 提供安全的 set/get/delete session variables helper。
+   - ✅ 所有 crypto 都只透過 secure messaging library，不在 controller 直接加密。
+   - ✅ 將 `current_account` 等 session value 改由 secure session library 存取。
    - ⬜ 補 tests：session value 寫入後不是 plaintext，讀取後可還原原始資料。
 
 6. `session-pooling-and-redis`
-   - ⬜ Development/test 使用 session pooling strategy。
+   - ✅ 使用 session pooling strategy。
    - ⬜ Production 使用 Redis 作為 distributed session store。
    - ⬜ 在 Heroku provision RedisCloud。
    - ⬜ 透過 production environment variables 指定 Redis connection URL。
    - ⬜ 確認 Redis 不可用時有可理解的錯誤或 fail-fast 行為。
 
 7. `app-heroku-deployment`
-   - ⬜ 建立 Heroku App dyno。
-   - ⬜ 設定 `RACK_ENV=production`。
-   - ⬜ 設定 `API_URL` 指向 deployed API。
-   - ⬜ 設定 `SESSION_SECRET`。
-   - ⬜ 設定 `MSG_KEY`。
+   - ✅ 建立 Heroku App dyno。
+   - ✅ 設定 `RACK_ENV=production`。
+   - ✅ 設定 `API_URL` 指向 deployed API。
+   - ✅ 設定 `SESSION_SECRET`。
+   - ✅ 設定 `MSG_KEY`。
    - ⬜ 設定 RedisCloud 相關 config vars。
    - ⬜ 確認 production logs 沒有輸出 plaintext password、session payload、message key。
 
@@ -107,23 +110,24 @@
 - `webmock-service-tests` 可與 `app-https-hsts` 平行進行。
 - `secure-messaging-library` -> `secure-session-library`
 - `secure-session-library` -> `session-pooling-and-redis`
+- `session pool store` 可先完成並部署；production Redis store 下一階段接續。
 - `basic-registration-workflow` 複查 -> `production-smoke-checks`
 - `app-heroku-deployment` 依賴 API 已先完成 deployed API URL。
 - `session-pooling-and-redis` -> `app-heroku-deployment`
 
 ## 待組內決策
 
-- `MSG_KEY` 的產生格式：是否使用 base64 encoded key，或直接使用 raw bytes encoded string。
-- Secure session value 是否只加密 `current_account`，或所有 App session values 都統一加密。
-- HTTPS/HSTS 是否只在 production 啟用，development/test 是否只用 spec 模擬。
+- ✅ `MSG_KEY` 使用 base64 encoded NaCl key，透過 `bundle exec rake newkey:msg` 產生。
+- ✅ Secure session value 目前先保護 `current_account`，後續新增 session values 時統一透過 `SecureSession`。
+- ✅ HTTPS/HSTS 只在 production 啟用。
 - RedisCloud plan 使用哪個免費/課程允許方案。
 - Registration 成功後是否自動登入，或 redirect login 讓使用者重新登入。
 
 ## 本週完成定義
 
-- App production request 會導向 HTTPS，且所有 production response 都有 HSTS。
+- App production request 會導向 HTTPS，且 production response 有 HSTS。
 - App service tests 使用 WebMock，不需要連到真實 API。
 - Registration form 仍可透過 service object 呼叫 API 建立帳號，並明確標記尚未驗證 account details 的風險。
 - Session data 透過 secure messaging library 加密後存放。
-- Development/test 使用 session pool，production 使用 RedisCloud distributed session store。
-- Heroku App 可以連到 deployed API，使用者可在雲端完成建立/更新資源流程。
+- App 使用 session pool，production RedisCloud distributed session store 留到下一階段。
+- Heroku App 已設定 deployed API URL 與 `MSG_KEY`，需部署後完成 production smoke checks。
