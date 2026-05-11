@@ -38,3 +38,9 @@ group :development, :test do
   gem 'rack-test'
   gem 'rerun'
 end
+
+group :test do
+  gem 'minitest'
+  gem 'minitest-rg'
+  gem 'webmock'
+end

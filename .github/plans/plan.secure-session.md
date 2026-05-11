@@ -27,8 +27,9 @@
 - 已完成 secure messaging library 與 secure session wrapper。
 - 已將 session storage 從 cookie session 改成 `Rack::Session::Pool`。
 - 已新增 production Redis distributed session store 設定與 Redis session wipe task。
+- 已新增 WebMock service integration tests，鎖定 App services 對 API 的 request/response contract。
 - 待強化項目：
-  - services 尚未用 WebMock 隔離外部 API request。
+  - HTTPS/HSTS 與 secure session crypto 還可補更細的 request/unit tests。
   - Heroku production RedisCloud config 已設定 `REDISCLOUD_URL`，仍需要 production smoke check 驗證。
 
 ## 實作策略（分階段）
@@ -52,12 +53,14 @@
    - ⬜ 補 request/integration spec：HTTP 會被 redirect，HTTPS 會通過。
 
 2. `webmock-service-tests`
-   - ⬜ 加入 `webmock` 測試依賴。
-   - ⬜ 測試 `AuthenticateAccount` service 的 success / failure / service unavailable。
-   - ⬜ 測試 `RegisterAccount` service 的 success / validation error / API error。
-   - ⬜ 測試 `ListAccounts` service 的 admin listing response。
-   - ⬜ 測試 system role update service 的 success / forbidden / API error。
-   - ⬜ 在 test setup 禁止真實外部 HTTP request。
+   - ✅ 加入 `webmock` 測試依賴。
+   - ✅ 新增 `spec/spec_helper.rb` 載入 WebMock/Minitest test setup。
+   - ✅ 測試 `AuthenticateAccount` service 的 success / failure / service unavailable。
+   - ✅ 測試 `RegisterAccount` service 的 success / validation error / API error。
+   - ✅ 測試 `ListAccounts` service 的 admin listing response / forbidden / API error。
+   - ✅ 測試 system role update service 的 success / forbidden / validation error / API error。
+   - ✅ 測試 `ListAttachments` service 的 success / API error。
+   - ✅ 在 test setup 禁止真實外部 HTTP request。
 
 3. ✅ `basic-registration-workflow`（已存在，需本週複查）
    - 已完成：registration page 接收 `email`、`username`、`password`。
@@ -122,7 +125,7 @@
 - ✅ `MSG_KEY` 使用 base64 encoded NaCl key，透過 `bundle exec rake newkey:msg` 產生。
 - ✅ Secure session value 目前先保護 `current_account`，後續新增 session values 時統一透過 `SecureSession`。
 - ✅ HTTPS/HSTS 只在 production 啟用。
-- RedisCloud plan 使用哪個免費/課程允許方案。
+- ✅ Heroku App 使用一個月限額免費的 RedisCloud plan。
 - Registration 成功後是否自動登入，或 redirect login 讓使用者重新登入。
 
 ## 本週完成定義
