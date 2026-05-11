@@ -2,7 +2,9 @@
 
 require 'figaro'
 require 'logger'
+require 'openssl'
 require 'rack/session'
+require 'rack/session/redis'
 require 'roda'
 require_relative '../require_app'
 
@@ -37,8 +39,26 @@ module LockedCV
     require 'pry'
 
     ONE_MONTH = 30 * 24 * 60 * 60
-    use Rack::Session::Pool,
-        expire_after: ONE_MONTH
+    @redis_url = ENV.delete('REDISCLOUD_URL') || ENV.delete('REDIS_URL')
+    @redis_server =
+      if @redis_url&.start_with?('rediss://')
+        { url: @redis_url, ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } }
+      else
+        @redis_url
+      end
+
+    SecureSession.setup(@redis_server)
+
+    configure :development, :test do
+      use Rack::Session::Pool,
+          expire_after: ONE_MONTH
+    end
+
+    configure :production do
+      use Rack::Session::Redis,
+          expire_after: ONE_MONTH,
+          redis_server: @redis_server
+    end
 
     configure :development, :test do
       logger.level = Logger::ERROR

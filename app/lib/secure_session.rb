@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'redis'
 require_relative 'secure_message'
 
 module LockedCV
@@ -8,8 +9,18 @@ module LockedCV
     SESSION_SECRET_BYTES = 64
 
     class << self
+      def setup(redis_server)
+        @redis_opts = redis_server.is_a?(Hash) ? redis_server : { url: redis_server }
+      end
+
       def generate_secret
         SecureMessage.encoded_random_bytes(SESSION_SECRET_BYTES)
+      end
+
+      def wipe_redis_sessions
+        redis = Redis.new(**@redis_opts)
+        session_ids = redis.keys
+        session_ids.each { |session_id| redis.del(session_id) }
       end
     end
 
