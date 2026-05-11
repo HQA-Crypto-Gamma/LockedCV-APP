@@ -19,7 +19,9 @@ cp config/secrets.example.yml config/secrets.yml
 bundle exec rake generate:session_secret
 ```
 
-Paste the generated value into `config/secrets.yml`.
+Paste the generated value into `config/secrets.yml`. Production also needs a
+Redis add-on URL exposed as `REDISCLOUD_URL` or `REDIS_URL`; development and
+test sessions use the in-memory Rack session pool.
 
 ## Run
 
@@ -73,6 +75,8 @@ The App currently includes:
 - public home page with login modal
 - account registration page
 - login and logout flow
+- encrypted server-side session values
+- Redis-backed production session storage
 - account overview page
 - document history loaded from the API
 - admin settings page for listing accounts and updating system roles
@@ -92,9 +96,9 @@ Current routes:
 ## Scope
 
 This branch has the main authenticated Web App foundation in place. Registration
-and admin lookup/update flows exist, but account verification, stronger session
-security, HTTPS enforcement, and resource-level authorization still need to be
-strengthened.
+and admin lookup/update flows exist, production sessions are Redis-backed, and
+HTTPS enforcement is configured. Account verification and resource-level
+authorization still need to be strengthened.
 
 ## Checks
 

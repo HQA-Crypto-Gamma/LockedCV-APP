@@ -26,10 +26,10 @@
 - 已完成 Heroku Procfile 與基本 production config。
 - 已完成 secure messaging library 與 secure session wrapper。
 - 已將 session storage 從 cookie session 改成 `Rack::Session::Pool`。
+- 已新增 production Redis distributed session store 設定與 Redis session wipe task。
 - 待強化項目：
   - services 尚未用 WebMock 隔離外部 API request。
-  - production Redis distributed session store 尚未完成，下一階段處理。
-  - Heroku production config 仍需要對齊 Redis 相關設定。
+  - Heroku production RedisCloud config 已設定 `REDISCLOUD_URL`，仍需要 production smoke check 驗證。
 
 ## 實作策略（分階段）
 
@@ -39,7 +39,7 @@
 4. **Secure messaging**：建立 secure messaging library，使用 `MSG_KEY` 與 NaCl `SimpleBox` 加密/解密訊息。
 5. **Secure session wrapper**：建立 secure session library，所有 session set/get 都透過 secure messaging library。
 6. **Session pool store**：先使用 `Rack::Session::Pool`，讓 session data 留在 server-side pool 並透過 secure messaging 加密。
-7. **Production Redis store**：下一階段再加入 Heroku RedisCloud / Redis distributed session store。
+7. **Production Redis store**：加入 Heroku RedisCloud / Redis distributed session store 設定，並保留 development/test 的 session pool。
 8. **Heroku deployment**：建立 App dyno，設定 production secrets，確認 App 指向 deployed API。
 9. **Production smoke checks**：部署後確認 registration、login、settings role update 等使用者流程可寫入雲端資源。
 
@@ -83,10 +83,12 @@
 
 6. `session-pooling-and-redis`
    - ✅ 使用 session pooling strategy。
-   - ⬜ Production 使用 Redis 作為 distributed session store。
-   - ⬜ 在 Heroku provision RedisCloud。
-   - ⬜ 透過 production environment variables 指定 Redis connection URL。
+   - ✅ Production 使用 Redis 作為 distributed session store。
+   - ✅ 新增 `session:wipe_redis_sessions` 清除 Redis session store。
+   - ✅ 在 Heroku provision RedisCloud。
+   - ✅ 透過 production environment variables 指定 Redis connection URL：`REDISCLOUD_URL`。
    - ⬜ 確認 Redis 不可用時有可理解的錯誤或 fail-fast 行為。
+   - ⬜ 在 deployed App smoke check Redis-backed session 行為。
 
 7. `app-heroku-deployment`
    - ✅ 建立 Heroku App dyno。
@@ -94,7 +96,7 @@
    - ✅ 設定 `API_URL` 指向 deployed API。
    - ✅ 設定 `SESSION_SECRET`。
    - ✅ 設定 `MSG_KEY`。
-   - ⬜ 設定 RedisCloud 相關 config vars。
+   - ✅ 在 Heroku provision RedisCloud 並設定 `REDISCLOUD_URL`。
    - ⬜ 確認 production logs 沒有輸出 plaintext password、session payload、message key。
 
 8. `production-smoke-checks`
@@ -129,5 +131,5 @@
 - App service tests 使用 WebMock，不需要連到真實 API。
 - Registration form 仍可透過 service object 呼叫 API 建立帳號，並明確標記尚未驗證 account details 的風險。
 - Session data 透過 secure messaging library 加密後存放。
-- App 使用 session pool，production RedisCloud distributed session store 留到下一階段。
-- Heroku App 已設定 deployed API URL 與 `MSG_KEY`，需部署後完成 production smoke checks。
+- App 在 development/test 使用 session pool，production 使用 RedisCloud distributed session store。
+- Heroku App 已設定 deployed API URL、`MSG_KEY` 與 `REDISCLOUD_URL`，仍需完成 production smoke checks。
