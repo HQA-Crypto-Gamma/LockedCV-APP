@@ -61,7 +61,7 @@ module LockedCV
       routing.on 'logout' do
         # GET /auth/logout
         routing.get do
-          session[:current_account] = nil
+          SecureSession.new(session).delete(:current_account)
           flash[:notice] = 'You have been logged out'
           routing.redirect '/'
         end
@@ -74,7 +74,7 @@ module LockedCV
     def login_account(routing)
       account = AuthenticateAccount.new(App.config).call(**credentials_from(routing))
 
-      session[:current_account] = account
+      SecureSession.new(session).set(:current_account, account)
       flash[:notice] = "Welcome back #{account['username']}!"
       routing.redirect '/'
     end

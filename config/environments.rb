@@ -2,8 +2,13 @@
 
 require 'figaro'
 require 'logger'
+require 'openssl'
 require 'rack/session'
+require 'rack/session/redis'
 require 'roda'
+require_relative '../require_app'
+
+require_app('lib')
 
 module LockedCV
   # Configuration for the LockedCV Web App
@@ -21,15 +26,39 @@ module LockedCV
       plugin :common_logger, $stdout
     end
 
+    configure :production do
+      plugin :redirect_http_to_https
+      plugin :hsts
+    end
+
     LOGGER = Logger.new($stderr)
     def self.logger = LOGGER
+
+    SecureMessage.setup(ENV.delete('MSG_KEY'))
 
     require 'pry'
 
     ONE_MONTH = 30 * 24 * 60 * 60
-    use Rack::Session::Cookie,
-        expire_after: ONE_MONTH,
-        secret: config.SESSION_SECRET
+    @redis_url = ENV.delete('REDISCLOUD_URL') || ENV.delete('REDIS_URL')
+    @redis_server =
+      if @redis_url&.start_with?('rediss://')
+        { url: @redis_url, ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } }
+      else
+        @redis_url
+      end
+
+    SecureSession.setup(@redis_server)
+
+    configure :development, :test do
+      use Rack::Session::Pool,
+          expire_after: ONE_MONTH
+    end
+
+    configure :production do
+      use Rack::Session::Redis,
+          expire_after: ONE_MONTH,
+          redis_server: @redis_server
+    end
 
     configure :development, :test do
       logger.level = Logger::ERROR

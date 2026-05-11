@@ -61,7 +61,10 @@ module LockedCV
     end
 
     def store_current_account(updated_account)
-      session[:current_account] = updated_account.merge('roles' => Array(@current_account['roles']))
+      SecureSession.new(session).set(
+        :current_account,
+        updated_account.merge('roles' => Array(@current_account['roles']))
+      )
     end
 
     def ensure_own_profile!(routing, username)

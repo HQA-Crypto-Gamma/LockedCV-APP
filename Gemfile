@@ -4,8 +4,11 @@ source 'https://rubygems.org'
 ruby File.read('.ruby-version').strip
 
 # Web
+gem 'logger', '~> 1.0'
 gem 'puma', '~>7.0'
 gem 'rack-session', '~>2.0'
+gem 'redis-rack'
+gem 'redis-store'
 gem 'roda', '~>3.0'
 gem 'slim'
 
@@ -34,4 +37,10 @@ end
 group :development, :test do
   gem 'rack-test'
   gem 'rerun'
+end
+
+group :test do
+  gem 'minitest'
+  gem 'minitest-rg'
+  gem 'webmock'
 end
