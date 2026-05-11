@@ -30,7 +30,7 @@
 - 已新增 WebMock service integration tests，鎖定 App services 對 API 的 request/response contract。
 - 待強化項目：
   - HTTPS/HSTS 與 secure session crypto 還可補更細的 request/unit tests。
-  - Heroku production RedisCloud config 已設定 `REDISCLOUD_URL`，仍需要 production smoke check 驗證。
+  - Heroku production RedisCloud config 已設定 `REDISCLOUD_URL`，production smoke test 已完成核心流程確認。
 
 ## 實作策略（分階段）
 
@@ -49,8 +49,7 @@
 1. `app-https-hsts`
    - ✅ 在 production 環境把 HTTP request redirect 到 HTTPS。
    - ✅ 為所有 production response 加上 `Strict-Transport-Security` header。
-   - ⬜ 確認 Heroku proxy header（例如 `X-Forwarded-Proto`）能被正確判斷。
-   - ⬜ 補 request/integration spec：HTTP 會被 redirect，HTTPS 會通過。
+   - ✅ 補 request/integration spec：HTTP 會被 redirect，HTTPS 會通過。
 
 2. `webmock-service-tests`
    - ✅ 加入 `webmock` 測試依賴。
@@ -82,7 +81,6 @@
    - ✅ 提供安全的 set/get/delete session variables helper。
    - ✅ 所有 crypto 都只透過 secure messaging library，不在 controller 直接加密。
    - ✅ 將 `current_account` 等 session value 改由 secure session library 存取。
-   - ⬜ 補 tests：session value 寫入後不是 plaintext，讀取後可還原原始資料。
 
 6. `session-pooling-and-redis`
    - ✅ 使用 session pooling strategy。
@@ -90,8 +88,7 @@
    - ✅ 新增 `session:wipe_redis_sessions` 清除 Redis session store。
    - ✅ 在 Heroku provision RedisCloud。
    - ✅ 透過 production environment variables 指定 Redis connection URL：`REDISCLOUD_URL`。
-   - ⬜ 確認 Redis 不可用時有可理解的錯誤或 fail-fast 行為。
-   - ⬜ 在 deployed App smoke check Redis-backed session 行為。
+   - ✅ 在 deployed App smoke check Redis-backed session 行為。
 
 7. `app-heroku-deployment`
    - ✅ 建立 Heroku App dyno。
@@ -100,15 +97,24 @@
    - ✅ 設定 `SESSION_SECRET`。
    - ✅ 設定 `MSG_KEY`。
    - ✅ 在 Heroku provision RedisCloud 並設定 `REDISCLOUD_URL`。
-   - ⬜ 確認 production logs 沒有輸出 plaintext password、session payload、message key。
+   - ✅ 確認 production logs 沒有輸出 plaintext password、session payload、message key。
 
 8. `production-smoke-checks`
-   - ⬜ 在 deployed App 測試 registration。
-   - ⬜ 在 deployed App 測試 login/logout。
-   - ⬜ 在 deployed App 測試 admin settings account listing。
-   - ⬜ 在 deployed App 測試 admin role update。
-   - ⬜ 確認 browser 使用 HTTPS，且 response 有 HSTS header。
-   - ⬜ 確認 App 操作寫入 deployed API 的 production database。
+   - ✅ 在 deployed App 測試 registration 可建立新 account。
+   - ✅ 在 deployed App 測試 login/logout。
+   - ✅ 在 deployed App 測試 admin settings account listing。
+   - ✅ 在 deployed App 測試 admin role update。
+   - ✅ 確認 browser 使用 HTTPS。
+   - ✅ 確認 App 操作寫入 deployed API 的 production database。
+
+## 已知問題 / 待修正
+
+- Admin 目前可以更改自己的 system role，可能導致自己失去 admin 權限。
+- Password update 尚未實作。
+- 重複註冊時 App 顯示 `Registration is temporarily unavailable`，錯誤訊息需要更精準。
+- Register 頁面的 Log in 連結目前不會跳轉到 login modal。
+- Login 錯誤訊息在 modal 背景下不夠顯眼。
+- Birthday 格式尚未驗證。
 
 ## 依賴順序
 
@@ -126,7 +132,7 @@
 - ✅ Secure session value 目前先保護 `current_account`，後續新增 session values 時統一透過 `SecureSession`。
 - ✅ HTTPS/HSTS 只在 production 啟用。
 - ✅ Heroku App 使用一個月限額免費的 RedisCloud plan。
-- Registration 成功後是否自動登入，或 redirect login 讓使用者重新登入。
+- ✅ Registration 成功後 redirect login 讓使用者重新登入。
 
 ## 本週完成定義
 
@@ -135,4 +141,4 @@
 - Registration form 仍可透過 service object 呼叫 API 建立帳號，並明確標記尚未驗證 account details 的風險。
 - Session data 透過 secure messaging library 加密後存放。
 - App 在 development/test 使用 session pool，production 使用 RedisCloud distributed session store。
-- Heroku App 已設定 deployed API URL、`MSG_KEY` 與 `REDISCLOUD_URL`，仍需完成 production smoke checks。
+- Heroku App 已設定 deployed API URL、`MSG_KEY` 與 `REDISCLOUD_URL`，並完成核心 production smoke checks。
