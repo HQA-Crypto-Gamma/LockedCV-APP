@@ -67,8 +67,7 @@ module LockedCV
     def update_password(routing, username)
       ensure_own_profile!(routing, username)
       change_current_password(routing)
-      flash[:notice] = 'Password updated'
-      routing.redirect "/account/#{username}"
+      log_out_after_password_update(routing)
     rescue ChangePassword::ValidationError => e
       password_update_failed(e.message, 400)
     rescue ChangePassword::ServiceUnavailableError => e
@@ -88,6 +87,12 @@ module LockedCV
         :current_account,
         updated_account.merge('roles' => Array(@current_account['roles']))
       )
+    end
+
+    def log_out_after_password_update(routing)
+      SecureSession.new(session).delete(:current_account)
+      flash[:notice] = 'Password updated. Please log in again.'
+      routing.redirect '/#login-modal'
     end
 
     def ensure_own_profile!(routing, username)
