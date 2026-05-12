@@ -92,7 +92,7 @@ module LockedCV
     def log_out_after_password_update(routing)
       SecureSession.new(session).delete(:current_account)
       flash[:notice] = 'Password updated. Please log in again.'
-      routing.redirect '/#login-modal'
+      routing.redirect '/'
     end
 
     def ensure_own_profile!(routing, username)

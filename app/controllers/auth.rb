@@ -26,11 +26,11 @@ module LockedCV
         rescue AuthenticateAccount::UnauthorizedError => e
           App.logger.warn "LOGIN FAILED: #{e.inspect}"
           flash[:error] = 'Username and password did not match our records'
-          routing.redirect '/#login-modal'
+          routing.redirect '/'
         rescue AuthenticateAccount::ServiceUnavailableError => e
           App.logger.error "AUTHENTICATION SERVICE UNAVAILABLE: #{e.inspect}"
           flash[:error] = 'Authentication service is temporarily unavailable'
-          routing.redirect '/#login-modal'
+          routing.redirect '/'
         end
       end
 
@@ -85,7 +85,7 @@ module LockedCV
       account = RegisterAccount.new(App.config).call(registration_payload(form_data))
 
       flash[:notice] = "Account #{account['username']} created. Please log in."
-      routing.redirect '/#login-modal'
+      routing.redirect '/'
     end
 
     def credentials_from(routing)
