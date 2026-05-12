@@ -3,6 +3,8 @@
 module LockedCV
   # Registers a new account through LockedCV-API
   class RegisterAccount
+    include BirthdayValidator
+
     class ValidationError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
@@ -38,11 +40,13 @@ module LockedCV
     end
 
     def validate!(registration_data)
-      return unless registration_data[:username].to_s.strip.empty? ||
-                    registration_data[:email].to_s.strip.empty? ||
-                    registration_data[:password].to_s.empty?
+      if registration_data[:username].to_s.strip.empty? ||
+         registration_data[:email].to_s.strip.empty? ||
+         registration_data[:password].to_s.empty?
+        raise ValidationError, 'Username, email, and password are required'
+      end
 
-      raise ValidationError, 'Username, email, and password are required'
+      validate_birthday!(registration_data[:birthday])
     end
 
     def payload_value(registration_data, field)

@@ -56,6 +56,16 @@ describe 'RegisterAccount service' do
     assert_not_requested(:post, "#{API_URL}/accounts")
   end
 
+  it 'BAD: validates birthday format before calling API' do
+    invalid_data = @registration_data.merge(birthday: '1906/12/09')
+
+    error = _(proc {
+      LockedCV::RegisterAccount.new(app.config).call(invalid_data)
+    }).must_raise LockedCV::RegisterAccount::ValidationError
+    _(error.message).must_equal 'Birthday must use YYYY-MM-DD format'
+    assert_not_requested(:post, "#{API_URL}/accounts")
+  end
+
   it 'BAD: raises ValidationError on API validation failure' do
     WebMock.stub_request(:post, "#{API_URL}/accounts")
            .with(body: @expected_payload.to_json)

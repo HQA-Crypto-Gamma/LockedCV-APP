@@ -3,6 +3,8 @@
 module LockedCV
   # Updates account profile details through LockedCV-API
   class UpdateAccount
+    include BirthdayValidator
+
     class ValidationError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
@@ -35,9 +37,9 @@ module LockedCV
     end
 
     def validate!(profile_data)
-      return unless profile_data[:email].to_s.strip.empty?
+      raise ValidationError, 'Email is required' if profile_data[:email].to_s.strip.empty?
 
-      raise ValidationError, 'Email is required'
+      validate_birthday!(profile_data[:birthday])
     end
 
     def payload_value(profile_data, field)
