@@ -5,6 +5,7 @@ require_relative 'app'
 
 module LockedCV
   # Account routes for the LockedCV Web App
+  # rubocop:disable Metrics/ClassLength
   class App < Roda
     route('account') do |routing|
       require_login!(routing)
@@ -12,6 +13,11 @@ module LockedCV
       routing.on String do |username|
         routing.on 'edit' do
           routing.get { render_profile(routing, username, editing: true) }
+        end
+
+        routing.on 'password' do
+          routing.get { render_password_form(routing, username) }
+          routing.post { update_password(routing, username) }
         end
 
         # GET /account/[username]
@@ -53,6 +59,23 @@ module LockedCV
       profile_update_failed(routing, 'Profile update is temporarily unavailable', 503)
     end
 
+    def render_password_form(routing, username)
+      ensure_own_profile!(routing, username)
+      view :change_password, locals: { account: @current_account }
+    end
+
+    def update_password(routing, username)
+      ensure_own_profile!(routing, username)
+      change_current_password(routing)
+      flash[:notice] = 'Password updated'
+      routing.redirect "/account/#{username}"
+    rescue ChangePassword::ValidationError => e
+      password_update_failed(e.message, 400)
+    rescue ChangePassword::ServiceUnavailableError => e
+      App.logger.error "PASSWORD UPDATE UNAVAILABLE: #{e.inspect}"
+      password_update_failed('Password update is temporarily unavailable', 503)
+    end
+
     def updated_profile_account(routing)
       UpdateAccount.new(App.config).call(
         account_id: @current_account['id'],
@@ -79,6 +102,23 @@ module LockedCV
       view :account, locals: { account: profile_form_data(routing), editing: true }
     end
 
+    def password_update_failed(message, status)
+      flash.now[:error] = message
+      response.status = status
+      view :change_password, locals: { account: @current_account }
+    end
+
+    def change_current_password(routing)
+      ChangePassword.new(App.config).call(
+        account_id: @current_account['id'],
+        password_data: {
+          current_password: routing.params['current_password'].to_s,
+          password: routing.params['password'].to_s,
+          password_confirmation: routing.params['password_confirmation'].to_s
+        }
+      )
+    end
+
     def profile_data_from(routing)
       UpdateAccount::EDITABLE_FIELDS.to_h do |field|
         [field, routing.params[field.to_s].to_s.strip]
@@ -96,4 +136,5 @@ module LockedCV
       profile.merge('roles' => Array(@current_account['roles']))
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
