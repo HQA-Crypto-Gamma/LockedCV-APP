@@ -61,13 +61,14 @@ describe 'RegisterAccount service' do
            .with(body: @expected_payload.to_json)
            .to_return(
              status: 400,
-             body: { message: 'Illegal Attributes' }.to_json,
+             body: { message: 'This user is already registered' }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
 
-    _(proc {
+    error = _(proc {
       LockedCV::RegisterAccount.new(app.config).call(@registration_data)
     }).must_raise LockedCV::RegisterAccount::ValidationError
+    _(error.message).must_equal 'This user is already registered'
   end
 
   it 'BAD: raises ServiceUnavailableError when API fails' do
