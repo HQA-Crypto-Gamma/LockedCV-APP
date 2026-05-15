@@ -30,6 +30,10 @@ module LockedCV
       parse(HTTP.put(url(path), json: body))
     end
 
+    def delete(path, body = {})
+      parse(HTTP.delete(url(path), json: body))
+    end
+
     def get(path, params = {})
       parse(HTTP.get(url_with_params(path, params)))
     end

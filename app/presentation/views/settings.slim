@@ -8,6 +8,7 @@ section
         th Email
         th Role
         th
+        th
     tbody
       - accounts.each do |account|
         - roles = Array(account['roles'])
@@ -27,3 +28,9 @@ section
               span.muted-value No role yet
             - else
               span.muted-value = roles.join(', ')
+          td
+            - if account['id'] == @current_account['id']
+              span.muted-value Current account
+            - else
+              form.delete-account-form method="post" action="/settings/accounts/#{account['id']}/delete"
+                button type="submit" onclick="return confirm('Delete this account?')" Delete

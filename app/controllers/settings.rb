@@ -28,6 +28,30 @@ module LockedCV
         view :settings, locals: { accounts: [] }
       end
 
+      routing.on 'accounts', String, 'delete' do |account_id|
+        routing.post do
+          DeleteAccount.new(App.config).call(
+            current_account_id: @current_account['id'],
+            target_account_id: account_id
+          )
+
+          flash[:notice] = 'Account deleted'
+          routing.redirect '/settings'
+        rescue DeleteAccount::UnauthorizedError => e
+          App.logger.warn "ACCOUNT DELETE UNAUTHORIZED: #{e.inspect}"
+          flash[:error] = e.message.empty? ? 'Only admins can delete accounts' : e.message
+          routing.redirect '/settings'
+        rescue DeleteAccount::ValidationError => e
+          App.logger.warn "ACCOUNT DELETE INVALID: #{e.inspect}"
+          flash[:error] = e.message
+          routing.redirect '/settings'
+        rescue DeleteAccount::ServiceUnavailableError => e
+          App.logger.error "ACCOUNT DELETE SERVICE UNAVAILABLE: #{e.inspect}"
+          flash[:error] = 'Account delete is temporarily unavailable'
+          routing.redirect '/settings'
+        end
+      end
+
       routing.post do
         AssignSystemRole.new(App.config).call(
           current_account_id: @current_account['id'],
