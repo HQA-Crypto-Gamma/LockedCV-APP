@@ -19,13 +19,13 @@
   - login/logout flow。
   - registration form 目前直接收 username/email/password 並呼叫 API 建立 account。
   - session 目前保存 safe account data。
+  - `Account` model：包住 API account info envelope 與 auth token。
+  - `CurrentSession` model：透過 `SecureSession` 分開保存 account info 與 auth token。
   - document history 目前透過 account id 呼叫 API。
 - 目前尚未有：
   - `RegistrationToken` library。
   - email verification URL flow。
   - password setup after token verification。
-  - App-side `Account` session model。
-  - `CurrentSession` model。
   - ApiClient Bearer token support。
   - token-scoped resources index flow。
 
@@ -81,17 +81,16 @@
    - 建立成功後 redirect login，讓使用者重新登入。
    - 避免把 token 明文 log 出來。
 
-5. `account-session-model`
-   - 新增 App-side `Account` model/value object，只存 logged-in safe account information。
-   - 欄位包含：`id`、`username`、`email`、`roles`、`auth_token`。
-   - 不加入 DB/migration；這不是 persistence model。
+5. ✅ `account-session-model`（已完成）
+   - 已新增 App-side `Account` model/value object。
+   - `Account` 包住 API 回傳的 account info envelope 與 auth token，不加入 DB/migration。
+   - 已提供 `logged_in?`、`logged_out?`、`id`、`username`、`email`、`roles`、`admin?`、`member?`。
    - 不存 password/password_digest/encrypted/hash columns。
 
-6. `current-session-model`
-   - 新增 `CurrentSession` model/wrapper。
-   - 負責透過 `SecureSession` 保存/讀取/delete current account。
-   - 提供 `logged_in?`、`admin?`、`auth_token` 等 helper。
-   - Controller 逐步從 raw `@current_account` hash 遷移到 `CurrentSession`。
+6. ✅ `current-session-model`（已完成）
+   - 已新增 `CurrentSession` model/wrapper。
+   - 已透過 `SecureSession` 分開保存/讀取/delete `:account` 與 `:auth_token`。
+   - Controller 遷移到 `CurrentSession` 留到下一個 commit。
 
 7. `authenticate-account-token`
    - 更新 `AuthenticateAccount` service，讀取 API authentication response 中的 `auth_token`。
