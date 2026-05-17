@@ -37,7 +37,7 @@ module LockedCV
       routing.is 'register' do
         # GET /auth/register
         routing.get do
-          routing.redirect '/' if @current_account
+          routing.redirect '/' if @current_account.logged_in?
 
           view :register, locals: { form_data: {}, current_account: @current_account }
         end
@@ -61,7 +61,7 @@ module LockedCV
       routing.on 'logout' do
         # GET /auth/logout
         routing.get do
-          SecureSession.new(session).delete(:current_account)
+          @current_session.delete
           flash[:notice] = 'You have been logged out'
           routing.redirect '/'
         end
@@ -72,10 +72,11 @@ module LockedCV
     private
 
     def login_account(routing)
-      account = AuthenticateAccount.new(App.config).call(**credentials_from(routing))
+      authenticated = AuthenticateAccount.new(App.config).call(**credentials_from(routing))
+      account = Account.new(authenticated[:account], authenticated[:auth_token])
 
-      SecureSession.new(session).set(:current_account, account)
-      flash[:notice] = "Welcome back #{account['username']}!"
+      @current_session.current_account = account
+      flash[:notice] = "Welcome back #{account.username}!"
       routing.redirect '/'
     end
 

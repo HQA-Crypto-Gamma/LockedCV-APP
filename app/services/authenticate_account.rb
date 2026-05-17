@@ -14,7 +14,7 @@ module LockedCV
       raise UnauthorizedError, 'Username and password required' if username.to_s.strip.empty? || password.to_s.empty?
 
       response = @client.post('/auth/authenticate', { username:, password: })
-      response.fetch('data').fetch('attributes')
+      account_response_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError => e
@@ -22,6 +22,20 @@ module LockedCV
     end
 
     private
+
+    def account_response_from(response)
+      data = response.fetch('data')
+      attributes = data.fetch('attributes').dup
+      auth_token = attributes.delete('auth_token')
+
+      {
+        account: {
+          'type' => data.fetch('type'),
+          'attributes' => attributes
+        },
+        auth_token:
+      }
+    end
 
     def api_error_for(error)
       return UnauthorizedError.new("Authentication failed: #{error.message}") if error.status == 403

@@ -29,7 +29,7 @@ section
             - else
               span.muted-value = roles.join(', ')
           td
-            - if account['id'] == @current_account['id']
+            - if account['id'] == @current_account.id
               span.muted-value Current account
             - else
               form.delete-account-form method="post" action="/settings/accounts/#{account['id']}/delete"

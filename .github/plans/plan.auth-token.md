@@ -21,6 +21,7 @@
   - session 目前保存 safe account data。
   - `Account` model：包住 API account info envelope 與 auth token。
   - `CurrentSession` model：透過 `SecureSession` 分開保存 account info 與 auth token。
+  - APP controllers 已改用 `CurrentSession` / `Account` 讀寫登入狀態。
   - document history 目前透過 account id 呼叫 API。
 - 目前尚未有：
   - `RegistrationToken` library。
@@ -90,13 +91,13 @@
 6. ✅ `current-session-model`（已完成）
    - 已新增 `CurrentSession` model/wrapper。
    - 已透過 `SecureSession` 分開保存/讀取/delete `:account` 與 `:auth_token`。
-   - Controller 遷移到 `CurrentSession` 留到下一個 commit。
+   - Controller 已遷移到 `CurrentSession`，不再直接用 `SecureSession` 存取 current account。
 
-7. `authenticate-account-token`
+7. ✅ `authenticate-account-token`（已完成）
    - 更新 `AuthenticateAccount` service，讀取 API authentication response 中的 `auth_token`。
    - 登入成功後把 token 存入 `CurrentSession`。
    - 登出時清除 account data 與 token。
-   - 補 WebMock tests 確認 token 被保存，不外洩到 flash/log。
+   - 已補 WebMock service test 確認 API auth token 會被分離保存，不混入 account attributes。
 
 8. `api-client-bearer-token`
    - 擴充 `ApiClient` 支援 optional auth token。

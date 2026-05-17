@@ -1,15 +1,15 @@
 - attachments ||= []
 
-- if current_account
+- if current_account.logged_in?
   section.dashboard-hero
     .dashboard-hero__content
-      p.eyebrow Hi #{current_account['username']}~ Welcome to LockedCV
+      p.eyebrow Hi #{current_account.username}~ Welcome to LockedCV
       h1 Your CV Vault
       p.dashboard-hero__lede
         | Upload resumes, review detected sensitive details, and keep masked versions ready for safer sharing.
     .dashboard-hero__account
       span Signed in as
-      strong = current_account['username']
+      strong = current_account.username
 
   section.workspace-grid.workspace-grid--single aria-label="CV workspace"
     .upload-panel
