@@ -6,7 +6,7 @@
 - 使用者一開始只輸入 username 與 email；App 確認 API 回報可用後，產生 encrypted registration token 與 verification URL。
 - App 將 username、email、verification URL 送到 API，由 API 呼叫 email provider 寄信。
 - 使用者點擊 verification URL 回到 App 後，App 驗證 registration token，再要求使用者設定 password，最後呼叫 API 建立 account。
-- 登入後 App 要保存 API 回傳的 auth token，並在每個 API request 加上 `HTTP_AUTHENTICATION: Bearer <TOKEN>`。
+- 登入後 App 要保存 API 回傳的 auth token，並在每個 API request 加上 `Authorization: Bearer <TOKEN>`。
 - App 取得 resources index 時不可把 requesting user id 或 username 傳給 API；API 應直接從 token 找 current account。
 
 ## 現況分析（2026-05-17）
@@ -22,12 +22,13 @@
   - `Account` model：包住 API account info envelope 與 auth token。
   - `CurrentSession` model：透過 `SecureSession` 分開保存 account info 與 auth token。
   - APP controllers 已改用 `CurrentSession` / `Account` 讀寫登入狀態。
-  - document history 目前透過 account id 呼叫 API。
+  - `ApiClient` 已支援 `HTTP.auth("Bearer ...")`。
+  - APP services 已透過 `current_account.auth_token` 呼叫需要授權的 API。
+  - 自己的 profile/password/attachments calls 已改用 token-scoped API paths，不再送 requesting account id。
 - 目前尚未有：
   - `RegistrationToken` library。
   - email verification URL flow。
   - password setup after token verification。
-  - ApiClient Bearer token support。
   - token-scoped resources index flow。
 
 ## 設計決策草案
@@ -99,26 +100,26 @@
    - 登出時清除 account data 與 token。
    - 已補 WebMock service test 確認 API auth token 會被分離保存，不混入 account attributes。
 
-8. `api-client-bearer-token`
-   - 擴充 `ApiClient` 支援 optional auth token。
-   - 需要授權的 calls 加上：
+8. ✅ `api-client-bearer-token`（已完成，tests 待補）
+   - 已擴充 `ApiClient` 支援 optional auth token。
+   - 需要授權的 calls 透過 `HTTP.auth` 加上：
 
      ```text
-     HTTP_AUTHENTICATION: Bearer <TOKEN>
+     Authorization: Bearer <TOKEN>
      ```
 
    - 避免每個 service 手寫 header。
-   - 測試 `GET`、`POST`、`PUT`、`DELETE` 帶 token 的 request contract。
+   - 待補 tests：`GET`、`POST`、`PUT`、`DELETE` 帶 token 的 request contract。
 
-9. `update-api-facing-services`
-   - 更新會讀寫 account-owned resources 的 services，改用 token。
-   - 移除 requesting user id/current account id 作為一般 resource request 的身份來源。
-   - Admin routes 若 API 仍需要 target username/account id，僅用於 target，不用於 caller identity。
-   - 更新 service specs。
+9. ✅ `update-api-facing-services`（已完成，tests 待補）
+   - 已更新會讀寫 account-owned resources/admin resources 的 services，改用 `current_account.auth_token`。
+   - 已移除 APP service 對 `current_account_id` body/query 參數的依賴。
+   - Admin routes 僅保留 target username/account id，caller identity 由 token 表示。
+   - 待補 service specs。
 
-10. `owned-resources-index`
+10. ✅ `owned-resources-index`（已完成 attachments 版本，tests 待補）
     - 新增或更新 document/resources index 頁面。
-    - App 呼叫 token-scoped API endpoint，例如 `GET /attachments` 或 `GET /resources`。
+    - App 已呼叫 token-scoped API endpoint：`GET /attachments`。
     - 不在 request path/query/body 放 requesting user's username/account id。
     - 顯示使用者擁有的 resources list。
     - 補 WebMock tests 確認 request 不包含 account id，且有 Bearer header。

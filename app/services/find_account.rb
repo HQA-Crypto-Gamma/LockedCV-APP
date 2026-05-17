@@ -6,12 +6,16 @@ module LockedCV
     class NotFoundError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(account_id:)
-      response = @client.get("/accounts/#{account_id}")
+    def call
+      response = @client.get(
+        '/account',
+        auth_token: @current_account.auth_token
+      )
       response.fetch('data').fetch('attributes')
     rescue ApiClient::ApiError => e
       raise api_error_for(e)

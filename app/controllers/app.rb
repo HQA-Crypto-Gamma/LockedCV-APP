@@ -35,7 +35,7 @@ module LockedCV
       return [] if @current_account.logged_out?
       return [] unless @current_account.id
 
-      ListAttachments.new(App.config).call(account_id: @current_account.id)
+      ListAttachments.new(App.config, current_account: @current_account).call
     rescue ListAttachments::ServiceUnavailableError => e
       App.logger.warn "ATTACHMENTS UNAVAILABLE: #{e.inspect}"
       []

@@ -76,8 +76,7 @@ module LockedCV
     end
 
     def updated_profile_account(routing)
-      UpdateAccount.new(App.config).call(
-        account_id: @current_account.id,
+      UpdateAccount.new(App.config, current_account: @current_account).call(
         profile_data: profile_data_from(routing)
       )
     end
@@ -116,8 +115,7 @@ module LockedCV
     end
 
     def change_current_password(routing)
-      ChangePassword.new(App.config).call(
-        account_id: @current_account.id,
+      ChangePassword.new(App.config, current_account: @current_account).call(
         password_data: {
           current_password: routing.params['current_password'].to_s,
           password: routing.params['password'].to_s,
@@ -139,7 +137,7 @@ module LockedCV
     end
 
     def current_account_profile
-      profile = FindAccount.new(App.config).call(account_id: @current_account.id)
+      profile = FindAccount.new(App.config, current_account: @current_account).call
       profile.merge('roles' => @current_account.roles)
     end
 
