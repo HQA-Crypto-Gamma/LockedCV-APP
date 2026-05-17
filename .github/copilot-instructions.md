@@ -35,12 +35,20 @@ form handling, and Slim view rendering.
 - `GET /auth/register` renders the registration form.
 - `POST /auth/register` creates an account through `LockedCV-API`.
 - `GET /account/:username` renders the logged-in account overview.
+- `GET /account/:username/edit` renders the editable account profile form.
+- `POST /account/:username` updates editable account profile fields through
+  `LockedCV-API`.
+- `GET /account/:username/password` renders the password change form.
+- `POST /account/:username/password` changes the password through
+  `LockedCV-API` and clears the current session on success.
 - `GET /settings` renders admin account settings.
 - `POST /settings` updates a user's system role through `LockedCV-API`.
+- `POST /settings/accounts/:account_id/delete` deletes an account through
+  `LockedCV-API` for admins.
 - `GET /auth/logout` clears session account data.
 
-`GET /auth/login` currently redirects to `/`; the login form is presented from
-the home page login modal.
+`GET /auth/login` currently redirects to `/#login-modal`; the login form is
+presented from the home page login modal.
 
 ## API Contract
 
@@ -77,6 +85,9 @@ Expected failure response:
 Other API-facing services call:
 
 - `POST /api/v1/accounts` for registration.
+- `PUT /api/v1/accounts/:account_id` for profile updates.
+- `PUT /api/v1/accounts/:account_id/password` for password changes.
+- `DELETE /api/v1/accounts/:account_id` for admin account deletion.
 - `GET /api/v1/accounts?current_account_id=...` for admin account listing.
 - `PUT /api/v1/accounts/:username/system_roles/:role_name` for admin role
   updates.
@@ -90,27 +101,31 @@ This branch has the authenticated-session Web App foundation in place:
 - API service client
 - login/logout flow
 - basic registration flow
+- profile update flow
+- change password flow
 - admin settings flow
+- admin account delete flow
 - document history from the API
 - cookie-backed session
 - flash notices/errors
 - role-aware view hooks
+- WebMock service tests
 
-Registration and admin lookup/update are implemented, but account verification,
-stronger session security, HTTPS enforcement, WebMock service tests,
-distributed session storage, and full resource-level authorization still need
-to be strengthened.
+Registration, profile update, password change, and admin lookup/update/delete
+are implemented, but account verification, stronger session security, HTTPS
+enforcement, distributed session storage, and full resource-level authorization
+still need to be strengthened.
 
 ## Validation
 
-Run available checks before handing off:
-
-```bash
-bundle exec rubocop --cache false .
-```
-
-If tests are added:
+Run tests before handing off:
 
 ```bash
 bundle exec rake spec
+```
+
+Run style checks before handing off:
+
+```bash
+bundle exec rubocop --cache false .
 ```

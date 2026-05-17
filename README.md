@@ -78,8 +78,12 @@ The App currently includes:
 - encrypted server-side session values
 - Redis-backed production session storage
 - account overview page
+- account profile edit/update flow
+- change password page that logs the user out after a successful update
 - document history loaded from the API
-- admin settings page for listing accounts and updating system roles
+- admin settings page for listing accounts, updating system roles, and deleting
+  accounts
+- birthday validation for registration and profile updates
 - flash messages and role-aware navigation
 
 Current routes:
@@ -89,18 +93,30 @@ Current routes:
 - `GET /auth/register`
 - `POST /auth/register`
 - `GET /account/:username`
+- `GET /account/:username/edit`
+- `POST /account/:username`
+- `GET /account/:username/password`
+- `POST /account/:username/password`
 - `GET /settings`
 - `POST /settings`
+- `POST /settings/accounts/:account_id/delete`
 - `GET /auth/logout`
 
 ## Scope
 
-This branch has the main authenticated Web App foundation in place. Registration
-and admin lookup/update flows exist, production sessions are Redis-backed, and
-HTTPS enforcement is configured. Account verification and resource-level
-authorization still need to be strengthened.
+This branch has the main authenticated Web App foundation in place. Registration,
+profile update, change password, and admin lookup/update/delete flows exist,
+production sessions are Redis-backed, and HTTPS enforcement is configured.
+Account verification and resource-level authorization still need to be
+strengthened.
 
 ## Checks
+
+Run tests:
+
+```bash
+bundle exec rake spec
+```
 
 Run style checks:
 
