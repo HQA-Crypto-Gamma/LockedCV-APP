@@ -9,3 +9,17 @@ require 'webmock/minitest'
 require_relative 'test_load_all'
 
 API_URL = app.config.API_URL
+
+def current_account(roles: ['admin'])
+  account_info = {
+    'type' => 'authenticated_account',
+    'attributes' => {
+      'id' => 'account-id',
+      'username' => 'ada-lovelace',
+      'email' => 'ada@example.com',
+      'roles' => roles
+    }
+  }
+
+  LockedCV::Account.new(account_info, 'auth-token')
+end

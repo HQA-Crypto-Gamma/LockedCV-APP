@@ -4,7 +4,7 @@ require_relative '../spec_helper'
 
 describe 'AssignSystemRole service' do
   before do
-    @current_account_id = 'admin-id'
+    @current_account = current_account
     @target_username = 'alan-turing'
     @role_name = 'admin'
     @account_attributes = {
@@ -20,15 +20,14 @@ describe 'AssignSystemRole service' do
 
   it 'HAPPY: assigns system role and returns target account attributes' do
     WebMock.stub_request(:put, @path)
-           .with(body: { current_account_id: @current_account_id }.to_json)
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 200,
              body: { data: { data: { attributes: @account_attributes } } }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
 
-    account = LockedCV::AssignSystemRole.new(app.config).call(
-      current_account_id: @current_account_id,
+    account = LockedCV::AssignSystemRole.new(app.config, current_account: @current_account).call(
       target_username: @target_username,
       role_name: @role_name
     )
@@ -38,7 +37,7 @@ describe 'AssignSystemRole service' do
 
   it 'BAD: raises UnauthorizedError when caller is not admin' do
     WebMock.stub_request(:put, @path)
-           .with(body: { current_account_id: @current_account_id }.to_json)
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 403,
              body: { message: 'Only admins can manage system roles' }.to_json,
@@ -46,8 +45,7 @@ describe 'AssignSystemRole service' do
            )
 
     _(proc {
-      LockedCV::AssignSystemRole.new(app.config).call(
-        current_account_id: @current_account_id,
+      LockedCV::AssignSystemRole.new(app.config, current_account: @current_account).call(
         target_username: @target_username,
         role_name: @role_name
       )
@@ -56,7 +54,7 @@ describe 'AssignSystemRole service' do
 
   it 'BAD: raises ValidationError for unknown role or account' do
     WebMock.stub_request(:put, @path)
-           .with(body: { current_account_id: @current_account_id }.to_json)
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 404,
              body: { message: 'Account not found' }.to_json,
@@ -64,8 +62,7 @@ describe 'AssignSystemRole service' do
            )
 
     _(proc {
-      LockedCV::AssignSystemRole.new(app.config).call(
-        current_account_id: @current_account_id,
+      LockedCV::AssignSystemRole.new(app.config, current_account: @current_account).call(
         target_username: @target_username,
         role_name: @role_name
       )
@@ -74,7 +71,7 @@ describe 'AssignSystemRole service' do
 
   it 'BAD: raises ServiceUnavailableError when API fails' do
     WebMock.stub_request(:put, @path)
-           .with(body: { current_account_id: @current_account_id }.to_json)
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 500,
              body: { message: 'boom' }.to_json,
@@ -82,8 +79,7 @@ describe 'AssignSystemRole service' do
            )
 
     _(proc {
-      LockedCV::AssignSystemRole.new(app.config).call(
-        current_account_id: @current_account_id,
+      LockedCV::AssignSystemRole.new(app.config, current_account: @current_account).call(
         target_username: @target_username,
         role_name: @role_name
       )
