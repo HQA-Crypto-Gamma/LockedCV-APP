@@ -4,7 +4,7 @@ require_relative '../spec_helper'
 
 describe 'ListAccounts service' do
   before do
-    @current_account_id = 'admin-id'
+    @current_account = current_account
     @accounts = [
       { 'username' => 'ada-lovelace', 'roles' => ['admin'] },
       { 'username' => 'alan-turing', 'roles' => ['member'] }
@@ -17,23 +17,21 @@ describe 'ListAccounts service' do
 
   it 'HAPPY: returns account attributes for admin' do
     WebMock.stub_request(:get, "#{API_URL}/accounts")
-           .with(query: { current_account_id: @current_account_id })
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 200,
              body: { data: @accounts.map { |attributes| { attributes: } } }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
 
-    accounts = LockedCV::ListAccounts.new(app.config).call(
-      current_account_id: @current_account_id
-    )
+    accounts = LockedCV::ListAccounts.new(app.config, current_account: @current_account).call
 
     _(accounts).must_equal @accounts
   end
 
   it 'BAD: raises UnauthorizedError when API rejects current account' do
     WebMock.stub_request(:get, "#{API_URL}/accounts")
-           .with(query: { current_account_id: @current_account_id })
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 403,
              body: { message: 'Only admins can list accounts' }.to_json,
@@ -41,13 +39,13 @@ describe 'ListAccounts service' do
            )
 
     _(proc {
-      LockedCV::ListAccounts.new(app.config).call(current_account_id: @current_account_id)
+      LockedCV::ListAccounts.new(app.config, current_account: @current_account).call
     }).must_raise LockedCV::ListAccounts::UnauthorizedError
   end
 
   it 'BAD: raises ServiceUnavailableError when API fails' do
     WebMock.stub_request(:get, "#{API_URL}/accounts")
-           .with(query: { current_account_id: @current_account_id })
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 500,
              body: { message: 'boom' }.to_json,
@@ -55,7 +53,7 @@ describe 'ListAccounts service' do
            )
 
     _(proc {
-      LockedCV::ListAccounts.new(app.config).call(current_account_id: @current_account_id)
+      LockedCV::ListAccounts.new(app.config, current_account: @current_account).call
     }).must_raise LockedCV::ListAccounts::ServiceUnavailableError
   end
 end

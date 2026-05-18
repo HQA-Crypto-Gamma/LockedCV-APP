@@ -76,10 +76,15 @@ The App currently includes:
 - account registration page
 - login and logout flow
 - encrypted server-side session values
+- API-issued auth token stored in secure session
 - Redis-backed production session storage
 - account overview page
+- account profile edit/update flow
+- change password page that logs the user out after a successful update
 - document history loaded from the API
-- admin settings page for listing accounts and updating system roles
+- admin settings page for listing accounts, updating system roles, and deleting
+  accounts
+- birthday validation for registration and profile updates
 - flash messages and role-aware navigation
 
 Current routes:
@@ -89,18 +94,43 @@ Current routes:
 - `GET /auth/register`
 - `POST /auth/register`
 - `GET /account/:username`
+- `GET /account/:username/edit`
+- `POST /account/:username`
+- `GET /account/:username/password`
+- `POST /account/:username/password`
 - `GET /settings`
 - `POST /settings`
+- `POST /settings/accounts/:account_id/delete`
 - `GET /auth/logout`
 
 ## Scope
 
-This branch has the main authenticated Web App foundation in place. Registration
-and admin lookup/update flows exist, production sessions are Redis-backed, and
-HTTPS enforcement is configured. Account verification and resource-level
-authorization still need to be strengthened.
+This branch has the main authenticated Web App foundation in place. Registration,
+profile update, change password, and admin lookup/update/delete flows exist,
+production sessions are Redis-backed, and HTTPS enforcement is configured.
+Authenticated API calls now send `Authorization: Bearer <TOKEN>` using the
+token returned by the API login response. The App uses token-scoped API paths
+for current-account profile, password, and attachment-list calls, so it does not
+send the requesting user's account id in those requests. Email verification
+registration still needs to be added.
+
+Current protected API calls:
+
+- `GET /api/v1/account`
+- `PUT /api/v1/account`
+- `PUT /api/v1/account/password`
+- `GET /api/v1/attachments`
+- `GET /api/v1/accounts` for admins
+- `DELETE /api/v1/accounts/:target_account_id` for admins
+- `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admins
 
 ## Checks
+
+Run tests:
+
+```bash
+bundle exec rake spec
+```
 
 Run style checks:
 

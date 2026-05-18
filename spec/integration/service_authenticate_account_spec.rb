@@ -9,7 +9,8 @@ describe 'AuthenticateAccount service' do
       'id' => 'account-id',
       'username' => 'ada-lovelace',
       'email' => 'ada@example.com',
-      'roles' => ['admin']
+      'roles' => ['admin'],
+      'auth_token' => 'auth-token'
     }
   end
 
@@ -22,13 +23,19 @@ describe 'AuthenticateAccount service' do
            .with(body: @credentials.to_json)
            .to_return(
              status: 200,
-             body: { data: { attributes: @account_attributes } }.to_json,
+             body: { data: { type: 'authenticated_account', attributes: @account_attributes } }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
 
-    account = LockedCV::AuthenticateAccount.new(app.config).call(**@credentials)
+    authenticated = LockedCV::AuthenticateAccount.new(app.config).call(**@credentials)
 
-    _(account).must_equal @account_attributes
+    _(authenticated).must_equal(
+      account: {
+        'type' => 'authenticated_account',
+        'attributes' => @account_attributes.except('auth_token')
+      },
+      auth_token: 'auth-token'
+    )
   end
 
   it 'BAD: raises UnauthorizedError when credentials are rejected' do

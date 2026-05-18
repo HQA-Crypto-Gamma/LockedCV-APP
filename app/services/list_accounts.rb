@@ -6,12 +6,13 @@ module LockedCV
     class UnauthorizedError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(current_account_id:)
-      response = @client.get('/accounts', { current_account_id: })
+    def call
+      response = @client.get('/accounts', auth_token: @current_account.auth_token)
       response.fetch('data').map { |entry| entry.fetch('attributes') }
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
