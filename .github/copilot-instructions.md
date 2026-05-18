@@ -3,6 +3,18 @@
 This file provides guidance to AI coding assistants and teammates working on
 the LockedCV Web App.
 
+## Startup Context for AI Assistants
+
+Before making changes, read:
+
+1. `README.md`
+2. `.github/copilot-instructions.md`
+3. `local.md` if it exists in the repo root
+
+`local.md` is intentionally gitignored. It is for local handoff notes such as
+current task status, user preferences, deployment reminders, or decisions not
+ready to commit.
+
 ## Project Overview
 
 LockedCV-APP is the server-rendered Web frontend for LockedCV. It is a thin
@@ -21,10 +33,13 @@ form handling, and Slim view rendering.
 - Use service objects under `app/services/` for HTTP calls to the API.
 - Keep API URLs configurable through `config/secrets.yml`, not hardcoded in
   controllers or views.
-- Store only non-sensitive account data in cookie sessions:
-  `id`, `username`, `email`, and `roles`.
+- Use `Account` and `CurrentSession` for logged-in account/session state.
+- Store only non-sensitive account data and the API-issued auth token in secure
+  session storage.
 - Do not store passwords, password digests, encrypted columns, or hash lookup
   values in session data.
+- Use `ApiClient` with `auth_token:` for authorized API calls. It sends
+  `Authorization: Bearer <TOKEN>` via `HTTP.auth`.
 - API authorization is the security boundary. App-side role checks are for
   navigation, button visibility, and user flow only.
 
@@ -68,7 +83,8 @@ Expected success response:
       "id": "account-uuid",
       "username": "jane_smith",
       "email": "jane@example.com",
-      "roles": ["member"]
+      "roles": ["member"],
+      "auth_token": "encrypted-token"
     }
   }
 }
@@ -85,13 +101,17 @@ Expected failure response:
 Other API-facing services call:
 
 - `POST /api/v1/accounts` for registration.
-- `PUT /api/v1/accounts/:account_id` for profile updates.
-- `PUT /api/v1/accounts/:account_id/password` for password changes.
-- `DELETE /api/v1/accounts/:account_id` for admin account deletion.
-- `GET /api/v1/accounts?current_account_id=...` for admin account listing.
-- `PUT /api/v1/accounts/:username/system_roles/:role_name` for admin role
-  updates.
-- `GET /api/v1/accounts/:account_id/attachments` for document history.
+- `GET /api/v1/account` for current account profile data.
+- `PUT /api/v1/account` for current account profile updates.
+- `PUT /api/v1/account/password` for current account password changes.
+- `GET /api/v1/attachments` for current account document history.
+- `GET /api/v1/accounts` for admin account listing.
+- `DELETE /api/v1/accounts/:target_account_id` for admin account deletion.
+- `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admin
+  role updates.
+
+Current-user calls must not put the requesting user's id or username in the API
+path/query/body. Target id/username is acceptable for admin actions.
 
 ## Development Boundary
 
@@ -111,10 +131,9 @@ This branch has the authenticated-session Web App foundation in place:
 - role-aware view hooks
 - WebMock service tests
 
-Registration, profile update, password change, and admin lookup/update/delete
-are implemented, but account verification, stronger session security, HTTPS
-enforcement, distributed session storage, and full resource-level authorization
-still need to be strengthened.
+Registration, profile update, password change, admin lookup/update/delete, auth
+token session storage, and bearer-token API calls are implemented. Email
+verification registration still needs to be added.
 
 ## Validation
 

@@ -100,7 +100,7 @@
    - 登出時清除 account data 與 token。
    - 已補 WebMock service test 確認 API auth token 會被分離保存，不混入 account attributes。
 
-8. ✅ `api-client-bearer-token`（已完成，tests 待補）
+8. ✅ `api-client-bearer-token`（已完成）
    - 已擴充 `ApiClient` 支援 optional auth token。
    - 需要授權的 calls 透過 `HTTP.auth` 加上：
 
@@ -109,20 +109,20 @@
      ```
 
    - 避免每個 service 手寫 header。
-   - 待補 tests：`GET`、`POST`、`PUT`、`DELETE` 帶 token 的 request contract。
+   - 已補 service tests，確認 authorized calls 會帶 `Authorization: Bearer <TOKEN>`。
 
-9. ✅ `update-api-facing-services`（已完成，tests 待補）
+9. ✅ `update-api-facing-services`（已完成）
    - 已更新會讀寫 account-owned resources/admin resources 的 services，改用 `current_account.auth_token`。
    - 已移除 APP service 對 `current_account_id` body/query 參數的依賴。
    - Admin routes 僅保留 target username/account id，caller identity 由 token 表示。
-   - 待補 service specs。
+   - 已更新 service specs。
 
-10. ✅ `owned-resources-index`（已完成 attachments 版本，tests 待補）
+10. ✅ `owned-resources-index`（已完成 attachments 版本）
     - 新增或更新 document/resources index 頁面。
     - App 已呼叫 token-scoped API endpoint：`GET /attachments`。
     - 不在 request path/query/body 放 requesting user's username/account id。
     - 顯示使用者擁有的 resources list。
-    - 補 WebMock tests 確認 request 不包含 account id，且有 Bearer header。
+    - 已補 WebMock tests 確認 request 不包含 account id，且有 Bearer header。
 
 ## App Routes 草案
 
@@ -172,7 +172,7 @@ Expected attributes include:
 ### Authorized resource request
 
 ```text
-HTTP_AUTHENTICATION: Bearer <TOKEN>
+Authorization: Bearer <TOKEN>
 ```
 
 ## 依賴順序

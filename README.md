@@ -76,6 +76,7 @@ The App currently includes:
 - account registration page
 - login and logout flow
 - encrypted server-side session values
+- API-issued auth token stored in secure session
 - Redis-backed production session storage
 - account overview page
 - account profile edit/update flow
@@ -107,8 +108,21 @@ Current routes:
 This branch has the main authenticated Web App foundation in place. Registration,
 profile update, change password, and admin lookup/update/delete flows exist,
 production sessions are Redis-backed, and HTTPS enforcement is configured.
-Account verification and resource-level authorization still need to be
-strengthened.
+Authenticated API calls now send `Authorization: Bearer <TOKEN>` using the
+token returned by the API login response. The App uses token-scoped API paths
+for current-account profile, password, and attachment-list calls, so it does not
+send the requesting user's account id in those requests. Email verification
+registration still needs to be added.
+
+Current protected API calls:
+
+- `GET /api/v1/account`
+- `PUT /api/v1/account`
+- `PUT /api/v1/account/password`
+- `GET /api/v1/attachments`
+- `GET /api/v1/accounts` for admins
+- `DELETE /api/v1/accounts/:target_account_id` for admins
+- `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admins
 
 ## Checks
 
