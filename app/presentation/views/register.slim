@@ -1,48 +1,20 @@
 - form_data ||= {}
 
 section.register-page
-  .register-panel
+  .register-panel.register-panel--compact
     p.eyebrow Create your vault
-    h1 Register
-    p.register-panel__lede Set up a LockedCV account so your resumes and masked copies stay tied to your private workspace.
+    h1 Create an account
+    p.register-panel__lede We'll email you a verification link. Click it to continue setting up your password and profile.
     p.required-note * Required fields
 
     form.form-stack.login-form method="post" action="/auth/register"
-      .register-form-grid
-        .register-form-section
-          label.required-field for="register-username" Username
-          input#register-username type="text" name="username" autocomplete="username" value=form_data['username']
+      label.required-field for="register-username" Username
+      input#register-username type="text" name="username" autocomplete="username" value=form_data['username']
 
-          label for="register-first-name" First name
-          input#register-first-name type="text" name="first_name" autocomplete="given-name" value=form_data['first_name']
+      label.required-field for="register-email" Email
+      input#register-email type="email" name="email" autocomplete="email" value=form_data['email']
 
-          label for="register-phone" Phone number
-          input#register-phone type="tel" name="phone_number" autocomplete="tel" value=form_data['phone_number']
-
-          label.required-field for="register-password" Password
-          input#register-password type="password" name="password" autocomplete="new-password"
-
-          label for="register-address" Address
-          textarea#register-address name="address" autocomplete="street-address" rows="2"
-            = form_data['address']
-
-        .register-form-section
-          label.required-field for="register-email" Email
-          input#register-email type="email" name="email" autocomplete="email" value=form_data['email']
-
-          label for="register-last-name" Last name
-          input#register-last-name type="text" name="last_name" autocomplete="family-name" value=form_data['last_name']
-
-          label for="register-birthday" Birthday
-          input#register-birthday type="text" name="birthday" autocomplete="bday" placeholder="YYYY-MM-DD" value=form_data['birthday']
-
-          label.required-field for="register-password-confirmation" Confirm password
-          input#register-password-confirmation type="password" name="password_confirmation" autocomplete="new-password"
-
-          label for="register-identification-numbers" Identification numbers
-          input#register-identification-numbers type="text" name="identification_numbers" value=form_data['identification_numbers']
-
-      button type="submit" Create account
+      button type="submit" Send verification email
 
     p.form-hint
       | Already have an account?
