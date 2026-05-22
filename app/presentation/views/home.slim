@@ -15,13 +15,29 @@
     .upload-panel
       h2 Upload a New document
       p Add a resume to scan for names, emails, phone numbers, addresses, schools, and other details before sharing.
-      form.upload-box action="#" method="get"
+      form.upload-box action="/attachments/upload" method="post" enctype="multipart/form-data"
         input#cv-upload type="file" name="cv" accept=".pdf"
         label for="cv-upload"
           span.upload-box__icon CV
-          span.upload-box__title Choose a file
-          span.upload-box__meta Only PDF
-        button type="button" Start scan
+          span#cv-upload-title.upload-box__title Choose a file
+          span#cv-upload-meta.upload-box__meta Only PDF
+        button#cv-upload-submit type="submit" disabled=true Start scan
+
+      javascript:
+        const cvUpload = document.getElementById('cv-upload');
+        const cvUploadTitle = document.getElementById('cv-upload-title');
+        const cvUploadMeta = document.getElementById('cv-upload-meta');
+        const cvUploadSubmit = document.getElementById('cv-upload-submit');
+
+        if (cvUpload && cvUploadTitle && cvUploadMeta && cvUploadSubmit) {
+          cvUpload.addEventListener('change', () => {
+            const file = cvUpload.files && cvUpload.files[0];
+
+            cvUploadTitle.textContent = file ? file.name : 'Choose a file';
+            cvUploadMeta.textContent = file ? 'Ready to upload' : 'Only PDF';
+            cvUploadSubmit.disabled = !file;
+          });
+        }
 
   section.document-section
     .section-heading
@@ -61,7 +77,9 @@
                 span.muted-value -
               td = '-'
               td
-                a.table-action href="#" Review
+                form.inline-action-form method="post" action="/attachments/#{attachment['id']}/delete"
+                  button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
+                    span.trash-icon aria-hidden="true"
 - else
   section.public-home
     .public-home__copy
