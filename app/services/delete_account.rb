@@ -7,14 +7,15 @@ module LockedCV
     class ValidationError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(current_account_id:, target_account_id:)
+    def call(target_account_id:)
       @client.delete(
         "/accounts/#{target_account_id}",
-        { current_account_id: }
+        auth_token: @current_account.auth_token
       )
     rescue ApiClient::ApiError => e
       raise api_error_for(e)

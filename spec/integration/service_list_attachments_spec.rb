@@ -4,7 +4,7 @@ require_relative '../spec_helper'
 
 describe 'ListAttachments service' do
   before do
-    @auth_token = 'auth-token'
+    @current_account = current_account
     @attachment_attributes = {
       'id' => 'attachment-id',
       'attachment_name' => 'resume.pdf'
@@ -18,7 +18,7 @@ describe 'ListAttachments service' do
 
   it 'HAPPY: returns attachment attributes for account' do
     WebMock.stub_request(:get, @path)
-           .with(headers: { 'Authorization' => "Bearer #{@auth_token}" })
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 200,
              body: {
@@ -29,15 +29,14 @@ describe 'ListAttachments service' do
              headers: { 'content-type' => 'application/json' }
            )
 
-    attachments = LockedCV::ListAttachments.new(app.config).call(
-      auth_token: @auth_token
-    )
+    attachments = LockedCV::ListAttachments.new(app.config, current_account: @current_account).call
 
     _(attachments).must_equal [@attachment_attributes]
   end
 
   it 'BAD: raises ServiceUnavailableError when API fails' do
     WebMock.stub_request(:get, @path)
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
              status: 500,
              body: { message: 'boom' }.to_json,
@@ -45,9 +44,7 @@ describe 'ListAttachments service' do
            )
 
     _(proc {
-      LockedCV::ListAttachments.new(app.config).call(
-        auth_token: @auth_token
-      )
+      LockedCV::ListAttachments.new(app.config, current_account: @current_account).call
     }).must_raise LockedCV::ListAttachments::ServiceUnavailableError
   end
 end

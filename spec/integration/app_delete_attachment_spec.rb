@@ -36,7 +36,7 @@ describe 'Attachment delete route' do
     WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
            .to_return(
              status: 200,
-             body: { data: { attributes: @account } }.to_json,
+             body: { data: { type: 'authenticated_account', attributes: @account } }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end

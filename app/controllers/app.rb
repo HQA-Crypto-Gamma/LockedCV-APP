@@ -14,7 +14,8 @@ module LockedCV
 
     route do |routing|
       response['Content-Type'] = 'text/html; charset=utf-8'
-      @current_account = SecureSession.new(session).get(:current_account)
+      @current_session = CurrentSession.new(session)
+      @current_account = @current_session.current_account
 
       routing.redirect_http_to_https if App.environment == :production
 
@@ -31,26 +32,23 @@ module LockedCV
     private
 
     def current_account_attachments
-      return [] unless @current_account
-      return [] unless @current_account['auth_token']
+      return [] if @current_account.logged_out?
 
-      ListAttachments.new(App.config).call(
-        auth_token: @current_account['auth_token']
-      )
+      ListAttachments.new(App.config, current_account: @current_account).call
     rescue ListAttachments::ServiceUnavailableError => e
       App.logger.warn "ATTACHMENTS UNAVAILABLE: #{e.inspect}"
       []
     end
 
     def require_login!(routing)
-      return if @current_account
+      return if @current_account.logged_in?
 
       flash[:error] = 'Please log in to continue'
       routing.redirect '/#login-modal'
     end
 
     def admin?
-      Array(@current_account && @current_account['roles']).include?('admin')
+      @current_account.admin?
     end
   end
 end

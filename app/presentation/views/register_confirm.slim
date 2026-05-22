@@ -1,0 +1,50 @@
+- registration_token ||= nil
+- email ||= nil
+- username ||= nil
+- form_data ||= {}
+
+section.register-page
+  .register-panel
+    p.eyebrow Email verified
+    h1 Finish registration
+    p.register-panel__lede Choose a password and complete the account details you want tied to your LockedCV workspace.
+    p.required-note * Required fields
+
+    form.form-stack.login-form method="post" action="/auth/register/#{registration_token}"
+      input type="hidden" name="registration_token" value=registration_token
+
+      .register-form-grid
+        .register-form-section
+          label.required-field for="register-username" Username
+          input#register-username type="text" name="username" autocomplete="username" value=username readonly=true
+
+          label for="register-first-name" First name
+          input#register-first-name type="text" name="first_name" autocomplete="given-name" value=form_data['first_name']
+
+          label for="register-phone" Phone number
+          input#register-phone type="tel" name="phone_number" autocomplete="tel" value=form_data['phone_number']
+
+          label.required-field for="register-password" Password
+          input#register-password type="password" name="password" autocomplete="new-password"
+
+          label for="register-address" Address
+          textarea#register-address name="address" autocomplete="street-address" rows="2"
+            = form_data['address']
+
+        .register-form-section
+          label.required-field for="register-email" Email
+          input#register-email type="email" name="email" autocomplete="email" value=email readonly=true
+
+          label for="register-last-name" Last name
+          input#register-last-name type="text" name="last_name" autocomplete="family-name" value=form_data['last_name']
+
+          label for="register-birthday" Birthday
+          input#register-birthday type="text" name="birthday" autocomplete="bday" placeholder="YYYY-MM-DD" value=form_data['birthday']
+
+          label.required-field for="register-password-confirmation" Confirm password
+          input#register-password-confirmation type="password" name="password_confirmation" autocomplete="new-password"
+
+          label for="register-identification-numbers" Identification numbers
+          input#register-identification-numbers type="text" name="identification_numbers" value=form_data['identification_numbers']
+
+      button type="submit" Create account

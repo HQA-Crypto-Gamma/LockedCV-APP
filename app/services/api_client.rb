@@ -23,33 +23,33 @@ module LockedCV
       @config = config
     end
 
-    def post(path, body)
-      parse(HTTP.post(url(path), json: body))
+    def post(path, body, auth_token: nil)
+      parse(http(auth_token).post(url(path), json: body))
     end
 
     def post_multipart(path, fields, auth_token: nil)
-      request = auth_token ? HTTP.auth("Bearer #{auth_token}") : HTTP
-
-      parse(request.post(url(path), form: fields))
+      parse(http(auth_token).post(url(path), form: fields))
     end
 
-    def put(path, body)
-      parse(HTTP.put(url(path), json: body))
+    def put(path, body = {}, auth_token: nil)
+      parse(http(auth_token).put(url(path), json: body))
     end
 
-    def delete(path, body = {}, auth_token: nil)
-      request = auth_token ? HTTP.auth("Bearer #{auth_token}") : HTTP
-
-      parse(request.delete(url(path), json: body))
+    def delete(path, body = nil, auth_token: nil)
+      request = http(auth_token).headers('Content-Type' => 'application/json')
+      response = body ? request.delete(url(path), body: body.to_json) : request.delete(url(path))
+      parse(response)
     end
 
-    def get(path, params = {}, auth_token: nil)
-      request = auth_token ? HTTP.auth("Bearer #{auth_token}") : HTTP
-
-      parse(request.get(url_with_params(path, params)))
+    def get(path, params: {}, auth_token: nil)
+      parse(http(auth_token).get(url_with_params(path, params)))
     end
 
     private
+
+    def http(auth_token)
+      auth_token ? HTTP.auth("Bearer #{auth_token}") : HTTP
+    end
 
     def url(path)
       "#{@config.API_URL}#{path}"

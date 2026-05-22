@@ -34,34 +34,79 @@ module LockedCV
         end
       end
 
-      routing.is 'register' do
-        # GET /auth/register
-        routing.get do
-          routing.redirect '/' if @current_account
+      routing.on 'register' do
+        @register_route = '/auth/register'
 
-          view :register, locals: { form_data: {}, current_account: @current_account }
+        # GET /auth/register/[registration_token]
+        routing.is String do |registration_token|
+          routing.get do
+            token = RegistrationToken.load(registration_token)
+            view :register_confirm,
+                 locals: {
+                   registration_token: registration_token,
+                   email: token.email,
+                   username: token.username,
+                   current_account: @current_account
+                 }
+          rescue RegistrationToken::InvalidTokenError
+            flash[:error] = 'Verification link is invalid or expired'
+            routing.redirect @register_route
+          end
+
+          routing.post do
+            complete_registration(routing, registration_token)
+          rescue RegistrationToken::InvalidTokenError
+            flash[:error] = 'Verification link is invalid or expired'
+            routing.redirect @register_route
+          rescue RegisterAccount::ValidationError => e
+            flash[:error] = e.message
+            routing.redirect "#{@register_route}/#{registration_token}"
+          rescue RegisterAccount::ServiceUnavailableError => e
+            App.logger.error "REGISTRATION SERVICE UNAVAILABLE: #{e.inspect}"
+            flash[:error] = 'Registration is temporarily unavailable'
+            routing.redirect "#{@register_route}/#{registration_token}"
+          rescue StandardError => e
+            App.logger.error "ERROR CREATING ACCOUNT: #{e.inspect}"
+            flash[:error] = 'Could not create account'
+            routing.redirect @register_route
+          end
         end
 
-        # POST /auth/register
-        routing.post do
-          register_account(routing)
-        rescue RegisterAccount::ValidationError => e
-          App.logger.warn "REGISTRATION VALIDATION FAILED: #{e.inspect}"
-          flash.now[:error] = e.message
-          response.status = 400
-          view :register, locals: { form_data: registration_data_from(routing), current_account: @current_account }
-        rescue RegisterAccount::ServiceUnavailableError => e
-          App.logger.error "REGISTRATION SERVICE UNAVAILABLE: #{e.inspect}"
-          flash.now[:error] = 'Registration is temporarily unavailable'
-          response.status = 503
-          view :register, locals: { form_data: registration_data_from(routing), current_account: @current_account }
+        routing.is do
+          # GET /auth/register
+          routing.get do
+            routing.redirect '/' if @current_account.logged_in?
+
+            view :register, locals: { form_data: {}, current_account: @current_account }
+          end
+
+          # POST /auth/register
+          routing.post do
+            VerifyRegistration.new(App.config).call(
+              email: routing.params['email'].to_s.strip,
+              username: routing.params['username'].to_s.strip
+            )
+            flash[:notice] = 'Check your email for a verification link'
+            routing.redirect '/'
+          rescue VerifyRegistration::VerificationError => e
+            flash[:error] = e.message
+            routing.redirect @register_route
+          rescue VerifyRegistration::ApiServerError => e
+            App.logger.warn "API server error: #{e.inspect}"
+            flash[:error] = 'Our servers are not responding -- please try later'
+            routing.redirect @register_route
+          rescue StandardError => e
+            App.logger.error "ERROR REGISTERING: #{e.inspect}"
+            flash[:error] = 'Could not start registration'
+            routing.redirect @register_route
+          end
         end
       end
 
       routing.on 'logout' do
         # GET /auth/logout
         routing.get do
-          SecureSession.new(session).delete(:current_account)
+          @current_session.delete
           flash[:notice] = 'You have been logged out'
           routing.redirect '/'
         end
@@ -72,16 +117,31 @@ module LockedCV
     private
 
     def login_account(routing)
-      account = AuthenticateAccount.new(App.config).call(**credentials_from(routing))
+      authenticated = AuthenticateAccount.new(App.config).call(**credentials_from(routing))
+      account = Account.new(authenticated[:account], authenticated[:auth_token])
 
-      SecureSession.new(session).set(:current_account, account)
-      flash[:notice] = "Welcome back #{account['username']}!"
+      @current_session.current_account = account
+      flash[:notice] = "Welcome back #{account.username}!"
       routing.redirect '/'
     end
 
     def register_account(routing)
       form_data = registration_data_from(routing)
       ensure_password_confirmation!(form_data)
+      account = RegisterAccount.new(App.config).call(registration_payload(form_data))
+
+      flash[:notice] = "Account #{account['username']} created. Please log in."
+      routing.redirect '/'
+    end
+
+    def complete_registration(routing, registration_token)
+      token = RegistrationToken.load(registration_token)
+      form_data = registration_data_from(routing).merge(
+        'email' => token.email,
+        'username' => token.username
+      )
+      ensure_password_confirmation!(form_data)
+
       account = RegisterAccount.new(App.config).call(registration_payload(form_data))
 
       flash[:notice] = "Account #{account['username']} created. Please log in."

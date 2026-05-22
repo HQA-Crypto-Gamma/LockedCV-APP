@@ -1,0 +1,143 @@
+# frozen_string_literal: true
+
+require_relative '../spec_helper'
+
+describe 'Registration flow' do
+  before do
+    @registration = {
+      username: 'grace-hopper',
+      email: 'grace@example.com'
+    }
+  end
+
+  after do
+    WebMock.reset!
+  end
+
+  def registration_token
+    LockedCV::RegistrationToken.new(**@registration).to_s
+  end
+
+  def stub_available_registration
+    WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
+           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .to_return(
+             status: 200,
+             body: { available: true }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_verification_email(status: 202, message: 'Verification email sent')
+    WebMock.stub_request(:post, "#{API_URL}/auth/register")
+           .with do |request|
+             body = JSON.parse(request.body)
+             body['username'] == @registration[:username] &&
+               body['email'] == @registration[:email] &&
+               body['verification_url'].start_with?("#{app.config.APP_URL}/auth/register/")
+           end
+           .to_return(
+             status: status,
+             body: { message: message }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_account_creation(expected_payload)
+    WebMock.stub_request(:post, "#{API_URL}/accounts")
+           .with(body: expected_payload.to_json)
+           .to_return(
+             status: 201,
+             body: {
+               data: {
+                 data: {
+                   attributes: {
+                     id: 'account-id',
+                     username: @registration[:username],
+                     email: @registration[:email],
+                     roles: ['member']
+                   }
+                 }
+               }
+             }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  it 'HAPPY: renders the registration request page for logged-out visitors' do
+    get '/auth/register'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'Create an account'
+    _(last_response.body).must_include 'name="username"'
+    _(last_response.body).must_include 'name="email"'
+    _(last_response.body).must_include 'Send verification email'
+  end
+
+  it 'HAPPY: starts registration and asks the visitor to check email' do
+    stub_available_registration
+    stub_verification_email
+
+    post '/auth/register', @registration
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/\z}
+
+    follow_redirect!
+    _(last_response.body).must_include 'Check your email for a verification link'
+  end
+
+  it 'HAPPY: renders registration confirmation page from a valid token' do
+    token = registration_token
+
+    get "/auth/register/#{token}"
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'Finish registration'
+    _(last_response.body).must_include %(name="username")
+    _(last_response.body).must_include %(value="#{@registration[:username]}")
+    _(last_response.body).must_include %(name="email")
+    _(last_response.body).must_include %(value="#{@registration[:email]}")
+    _(last_response.body).must_include 'readonly'
+  end
+
+  it 'HAPPY: completes registration from a valid token' do
+    token = registration_token
+    expected_payload = {
+      username: @registration[:username],
+      email: @registration[:email],
+      phone_number: nil,
+      first_name: 'Grace',
+      last_name: 'Hopper',
+      birthday: nil,
+      address: nil,
+      identification_numbers: nil,
+      password: 'grace-secret'
+    }
+    stub_account_creation(expected_payload)
+
+    post "/auth/register/#{token}", {
+      first_name: 'Grace',
+      last_name: 'Hopper',
+      password: 'grace-secret',
+      password_confirmation: 'grace-secret'
+    }
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/\z}
+
+    follow_redirect!
+    _(last_response.body).must_include 'Account grace-hopper created. Please log in.'
+  end
+
+  it 'BAD: rejects tampered registration tokens without creating an account' do
+    post '/auth/register/not-a-real-token', {
+      password: 'grace-secret',
+      password_confirmation: 'grace-secret'
+    }
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/auth/register\z}
+    assert_not_requested(:post, "#{API_URL}/accounts")
+  end
+end

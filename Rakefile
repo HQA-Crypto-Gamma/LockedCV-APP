@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
+require 'rake/testtask'
 require './require_app'
 
-task default: :style
+task default: :spec
 
 desc 'Prints the current environment'
 task :print_env do
@@ -12,6 +13,12 @@ end
 desc 'Run rubocop to check style'
 task :style do
   sh 'rubocop .'
+end
+
+desc 'Test all the specs'
+Rake::TestTask.new(:spec) do |t|
+  t.pattern = 'spec/**/*_spec.rb'
+  t.warning = false
 end
 
 desc 'Run application console (pry)'

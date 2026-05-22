@@ -7,9 +7,9 @@ nav.site-nav
       svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
         path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 2 8h1v6.5A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5V8h1a.5.5 0 0 0 .354-.854l-6-6zM4 14.5V7.707l4-4 4 4V14.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z"
       span Home
-    - if current_account
-      - account_path = "/account/#{current_account['username']}"
-      - if current_account['roles']&.include?('admin')
+    - if current_account.logged_in?
+      - account_path = "/account/#{current_account.username}"
+      - if current_account.admin?
         a.nav-link href="/settings"
           svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
             path d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.8 11.8 0 0 0 2.517 2.453c.386.273.744.482 1.041.623.144.068.293.126.429.166.13.039.279.076.407.076s.277-.037.407-.076c.136-.04.285-.098.43-.166.296-.141.654-.35 1.04-.623a11.8 11.8 0 0 0 2.517-2.453c1.678-2.195 3.061-5.513 2.465-9.99a1.54 1.54 0 0 0-1.044-1.263 62.5 62.5 0 0 0-2.887-.87C9.843.266 8.69 0 8 0zm0 1c.54 0 1.66.24 2.66.511 1.02.276 2.04.6 2.84.86.24.079.41.289.444.54.548 4.113-.73 7.09-2.247 9.074A10.8 10.8 0 0 1 9.76 14.13c-.342.242-.63.406-.86.515A2.2 2.2 0 0 1 8 15a2.2 2.2 0 0 1-.9-.355 7.8 7.8 0 0 1-.86-.515 10.8 10.8 0 0 1-1.937-2.145C2.786 10.001 1.508 7.024 2.056 2.91a.54.54 0 0 1 .444-.54 61.5 61.5 0 0 1 2.84-.86C6.34 1.24 7.46 1 8 1z"

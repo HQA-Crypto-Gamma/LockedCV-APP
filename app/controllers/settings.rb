@@ -12,15 +12,13 @@ module LockedCV
       require_admin!(routing)
 
       routing.get do
-        accounts = ListAccounts.new(App.config).call(
-          current_account_id: @current_account['id']
-        )
+        accounts = ListAccounts.new(App.config, current_account: @current_account).call
 
         view :settings, locals: { accounts: }
       rescue ListAccounts::UnauthorizedError => e
         App.logger.warn "SETTINGS UNAUTHORIZED: #{e.inspect}"
         flash[:error] = 'Only admins can view settings'
-        routing.redirect "/account/#{@current_account['username']}"
+        routing.redirect "/account/#{@current_account.username}"
       rescue ListAccounts::ServiceUnavailableError => e
         App.logger.error "SETTINGS SERVICE UNAVAILABLE: #{e.inspect}"
         flash.now[:error] = 'Settings are temporarily unavailable'
@@ -30,10 +28,7 @@ module LockedCV
 
       routing.on 'accounts', String, 'delete' do |account_id|
         routing.post do
-          DeleteAccount.new(App.config).call(
-            current_account_id: @current_account['id'],
-            target_account_id: account_id
-          )
+          DeleteAccount.new(App.config, current_account: @current_account).call(target_account_id: account_id)
 
           flash[:notice] = 'Account deleted'
           routing.redirect '/settings'
@@ -53,8 +48,7 @@ module LockedCV
       end
 
       routing.post do
-        AssignSystemRole.new(App.config).call(
-          current_account_id: @current_account['id'],
+        AssignSystemRole.new(App.config, current_account: @current_account).call(
           target_username: routing.params['username'].to_s,
           role_name: routing.params['role'].to_s
         )
@@ -83,7 +77,7 @@ module LockedCV
       return if admin?
 
       flash[:error] = 'Only admins can view settings'
-      routing.redirect "/account/#{@current_account['username']}"
+      routing.redirect "/account/#{@current_account.username}"
     end
   end
 end

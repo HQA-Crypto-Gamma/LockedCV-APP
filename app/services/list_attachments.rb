@@ -5,12 +5,16 @@ module LockedCV
   class ListAttachments
     class ServiceUnavailableError < StandardError; end
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(auth_token:)
-      response = @client.get('/attachments', {}, auth_token:)
+    def call
+      response = @client.get(
+        '/attachments',
+        auth_token: @current_account.auth_token
+      )
       response.fetch('data').map { |entry| entry.fetch('data').fetch('attributes') }
     rescue ApiClient::ApiError, HTTP::Error, JSON::ParserError => e
       raise unavailable_error_for(e)

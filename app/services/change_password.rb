@@ -6,14 +6,19 @@ module LockedCV
     class ValidationError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(account_id:, password_data:)
+    def call(password_data:)
       validate!(password_data)
 
-      @client.put("/accounts/#{account_id}/password", password_payload(password_data))
+      @client.put(
+        '/account/password',
+        password_payload(password_data),
+        auth_token: @current_account.auth_token
+      )
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError, KeyError => e

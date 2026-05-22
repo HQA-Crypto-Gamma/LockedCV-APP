@@ -7,14 +7,16 @@ module LockedCV
     class ValidationError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(current_account_id:, target_username:, role_name:)
+    def call(target_username:, role_name:)
       response = @client.put(
         "/accounts/#{target_username}/system_roles/#{role_name}",
-        { current_account_id: }
+        {},
+        auth_token: @current_account.auth_token
       )
       response.fetch('data').fetch('data').fetch('attributes')
     rescue ApiClient::ApiError => e

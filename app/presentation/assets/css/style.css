@@ -855,6 +855,10 @@ button:disabled {
   background: #ffffff;
 }
 
+.register-panel--compact {
+  width: min(520px, 100%);
+}
+
 .register-panel h1 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 3.25rem);
@@ -908,6 +912,12 @@ button:disabled {
 .register-form-section {
   display: grid;
   gap: 12px;
+}
+
+.register-page input[readonly] {
+  color: #4d5a64;
+  background: #eef2f5;
+  cursor: default;
 }
 
 .form-hint {

@@ -13,14 +13,15 @@ module LockedCV
     ].freeze
     OPTIONAL_FIELDS = EDITABLE_FIELDS - %i[email]
 
-    def initialize(config)
+    def initialize(config, current_account:)
       @client = ApiClient.new(config)
+      @current_account = current_account
     end
 
-    def call(account_id:, profile_data:)
+    def call(profile_data:)
       validate!(profile_data)
 
-      response = @client.put("/accounts/#{account_id}", profile_payload(profile_data))
+      response = update_account(profile_data)
       response.fetch('data').fetch('data').fetch('attributes')
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
@@ -29,6 +30,14 @@ module LockedCV
     end
 
     private
+
+    def update_account(profile_data)
+      @client.put(
+        '/account',
+        profile_payload(profile_data),
+        auth_token: @current_account.auth_token
+      )
+    end
 
     def profile_payload(profile_data)
       EDITABLE_FIELDS.to_h do |field|

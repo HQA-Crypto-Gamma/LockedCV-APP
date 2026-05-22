@@ -43,8 +43,8 @@ module LockedCV
 
     def upload_selected_attachment(routing)
       UploadAttachment.new(App.config).call(
-        account_id: @current_account['id'],
-        auth_token: @current_account['auth_token'],
+        account_id: @current_account.id,
+        auth_token: @current_account.auth_token,
         uploaded_file: routing.params['cv']
       )
     end
@@ -70,9 +70,9 @@ module LockedCV
 
     def delete_selected_attachment(attachment_id)
       DeleteAttachment.new(App.config).call(
-        account_id: @current_account['id'],
+        account_id: @current_account.id,
         attachment_id:,
-        auth_token: @current_account['auth_token']
+        auth_token: @current_account.auth_token
       )
     end
 
