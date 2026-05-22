@@ -32,9 +32,11 @@ module LockedCV
 
     def current_account_attachments
       return [] unless @current_account
-      return [] unless @current_account['id']
+      return [] unless @current_account['auth_token']
 
-      ListAttachments.new(App.config).call(account_id: @current_account['id'])
+      ListAttachments.new(App.config).call(
+        auth_token: @current_account['auth_token']
+      )
     rescue ListAttachments::ServiceUnavailableError => e
       App.logger.warn "ATTACHMENTS UNAVAILABLE: #{e.inspect}"
       []
