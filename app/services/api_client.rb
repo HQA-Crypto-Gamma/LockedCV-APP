@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'http'
+require 'http/form_data'
 require 'json'
 require 'uri'
 
@@ -24,6 +25,10 @@ module LockedCV
 
     def post(path, body, auth_token: nil)
       parse(http(auth_token).post(url(path), json: body))
+    end
+
+    def post_multipart(path, fields, auth_token: nil)
+      parse(http(auth_token).post(url(path), form: fields))
     end
 
     def put(path, body = {}, auth_token: nil)

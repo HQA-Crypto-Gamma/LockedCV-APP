@@ -167,6 +167,13 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  border-color: #b9c4cc;
+  color: #eef3f5;
+  background: #9aa8b2;
+  cursor: not-allowed;
+}
+
 .button--secondary {
   color: #146276;
   background: #ffffff;
@@ -299,6 +306,7 @@ button {
 
 .upload-box__title {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .upload-box__meta {
@@ -380,6 +388,56 @@ button {
 .table-action {
   font-weight: 700;
   text-decoration: none;
+}
+
+.inline-action-form {
+  margin: 0;
+}
+
+.table-action {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  color: #146276;
+  background: transparent;
+}
+
+.table-action--danger {
+  color: #a12828;
+}
+
+.trash-icon {
+  position: relative;
+  display: inline-block;
+  width: 15px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-radius: 0 0 3px 3px;
+}
+
+.trash-icon::before,
+.trash-icon::after {
+  position: absolute;
+  content: "";
+  background: currentColor;
+}
+
+.trash-icon::before {
+  top: -6px;
+  left: -3px;
+  width: 21px;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.trash-icon::after {
+  top: -9px;
+  left: 4px;
+  width: 7px;
+  height: 2px;
+  border-radius: 2px;
 }
 
 .document-table-wrapper {
