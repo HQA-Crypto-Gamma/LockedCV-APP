@@ -9,8 +9,8 @@ module LockedCV
       @client = ApiClient.new(config)
     end
 
-    def call(account_id:)
-      response = @client.get("/accounts/#{account_id}/attachments")
+    def call(auth_token:)
+      response = @client.get('/attachments', {}, auth_token:)
       response.fetch('data').map { |entry| entry.fetch('data').fetch('attributes') }
     rescue ApiClient::ApiError, HTTP::Error, JSON::ParserError => e
       raise unavailable_error_for(e)
