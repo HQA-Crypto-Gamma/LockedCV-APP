@@ -32,7 +32,7 @@ describe 'Attachment upload route' do
 
     _(last_response.status).must_equal 302
     _(last_response.location).must_match %r{/$}
-    assert_requested(:post, "#{API_URL}/accounts/#{@account['id']}/attachments/upload")
+    assert_requested(:post, "#{API_URL}/attachments/upload")
   end
 
   private
@@ -47,7 +47,7 @@ describe 'Attachment upload route' do
   end
 
   def stub_upload
-    WebMock.stub_request(:post, "#{API_URL}/accounts/#{@account['id']}/attachments/upload")
+    WebMock.stub_request(:post, "#{API_URL}/attachments/upload")
            .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
            .to_return(
              status: 201,

@@ -138,18 +138,14 @@ Current protected API calls:
 - `POST /api/v1/accounts/registration/check`
 - `POST /api/v1/auth/register`
 - `POST /api/v1/accounts`
+- `POST /api/v1/attachments/upload`
+- `DELETE /api/v1/attachments/:attachment_id`
 - `GET /api/v1/accounts` for admins
 - `DELETE /api/v1/accounts/:target_account_id` for admins
 - `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admins
-- `POST /api/v1/accounts/:account_id/attachments/upload` for current account
-  attachment upload
-- `DELETE /api/v1/accounts/:account_id/attachments/:attachment_id` for current
-  account attachment delete
 
-The last two attachment routes still include the current account id because the
-API does not yet expose token-scoped upload/delete routes. They still send the
-Bearer token, and the API verifies that the path account matches the token
-owner.
+Current-user API calls use token-scoped paths. Admin actions still include a
+target account id or username because they operate on another account.
 
 ## Checks
 

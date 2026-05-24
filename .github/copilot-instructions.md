@@ -117,10 +117,9 @@ Other API-facing services call:
 - `PUT /api/v1/account` for current account profile updates.
 - `PUT /api/v1/account/password` for current account password changes.
 - `GET /api/v1/attachments` for current account document history.
-- `POST /api/v1/accounts/:account_id/attachments/upload` for current account
-  attachment upload.
-- `DELETE /api/v1/accounts/:account_id/attachments/:attachment_id` for current
-  account attachment delete.
+- `POST /api/v1/attachments/upload` for current account attachment upload.
+- `DELETE /api/v1/attachments/:attachment_id` for current account attachment
+  delete.
 - `GET /api/v1/accounts` for admin account listing.
 - `DELETE /api/v1/accounts/:target_account_id` for admin account deletion.
 - `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admin
@@ -128,10 +127,7 @@ Other API-facing services call:
 
 Current-user calls should prefer token-scoped API paths and should not put the
 requesting user's id or username in the API path/query/body. Target id/username
-is acceptable for admin actions. Current attachment upload/delete calls are the
-exception because the API still exposes only account-scoped routes for those
-actions; they must include the Bearer token and logged-in account id until the
-API adds token-scoped equivalents.
+is acceptable for admin actions.
 
 ## Development Boundary
 
