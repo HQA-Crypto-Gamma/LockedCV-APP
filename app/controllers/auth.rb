@@ -23,6 +23,9 @@ module LockedCV
         # POST /auth/login
         routing.post do
           login_account(routing)
+        rescue FormValidationError => e
+          flash[:error] = e.message
+          routing.redirect '/'
         rescue AuthenticateAccount::UnauthorizedError => e
           App.logger.warn "LOGIN FAILED: #{e.inspect}"
           flash[:error] = 'Username and password did not match our records'
@@ -53,8 +56,12 @@ module LockedCV
             routing.redirect @register_route
           end
 
+          # POST /auth/register/[registration_token]
           routing.post do
             complete_registration(routing, registration_token)
+          rescue FormValidationError => e
+            flash[:error] = e.message
+            routing.redirect "#{@register_route}/#{registration_token}"
           rescue RegistrationToken::InvalidTokenError
             flash[:error] = 'Verification link is invalid or expired'
             routing.redirect @register_route
@@ -82,12 +89,17 @@ module LockedCV
 
           # POST /auth/register
           routing.post do
+            form_data = validate_form(Form::RegistrationStart, routing.params)
             VerifyRegistration.new(App.config).call(
-              email: routing.params['email'].to_s.strip,
-              username: routing.params['username'].to_s.strip
+              email: form_data[:email].to_s.strip,
+              username: form_data[:username].to_s.strip
             )
             flash[:notice] = 'Check your email for a verification link'
             routing.redirect '/'
+          rescue FormValidationError => e
+            flash.now[:error] = e.message
+            response.status = 400
+            view :register, locals: { form_data: e.values.transform_keys(&:to_s), current_account: @current_account }
           rescue VerifyRegistration::VerificationError => e
             flash[:error] = e.message
             routing.redirect @register_route
@@ -117,7 +129,7 @@ module LockedCV
     private
 
     def login_account(routing)
-      authenticated = AuthenticateAccount.new(App.config).call(**credentials_from(routing))
+      authenticated = AuthenticateAccount.new(App.config).call(**credentials_from(routing.params))
       account = Account.new(authenticated[:account], authenticated[:auth_token])
 
       @current_session.current_account = account
@@ -125,22 +137,14 @@ module LockedCV
       routing.redirect '/'
     end
 
-    def register_account(routing)
-      form_data = registration_data_from(routing)
-      ensure_password_confirmation!(form_data)
-      account = RegisterAccount.new(App.config).call(registration_payload(form_data))
-
-      flash[:notice] = "Account #{account['username']} created. Please log in."
-      routing.redirect '/'
-    end
-
     def complete_registration(routing, registration_token)
       token = RegistrationToken.load(registration_token)
-      form_data = registration_data_from(routing).merge(
+      form_data = registration_data_from(routing)
+      validate_registration_password!(form_data)
+      form_data = form_data.merge(
         'email' => token.email,
         'username' => token.username
       )
-      ensure_password_confirmation!(form_data)
 
       account = RegisterAccount.new(App.config).call(registration_payload(form_data))
 
@@ -148,10 +152,11 @@ module LockedCV
       routing.redirect '/'
     end
 
-    def credentials_from(routing)
+    def credentials_from(params)
+      form_data = validate_form(Form::LoginCredentials, params)
       {
-        username: routing.params['username'].to_s.strip,
-        password: routing.params['password'].to_s
+        username: form_data[:username].to_s.strip,
+        password: form_data[:password].to_s
       }
     end
 
@@ -165,10 +170,12 @@ module LockedCV
       API_REGISTRATION_FIELDS.to_h { |field| [field.to_sym, form_data[field]] }
     end
 
-    def ensure_password_confirmation!(form_data)
-      return if form_data['password'] == form_data['password_confirmation']
-
-      raise RegisterAccount::ValidationError, 'Password confirmation does not match'
+    def validate_registration_password!(form_data)
+      validate_form(
+        Form::RegistrationPassword,
+        password: form_data['password'],
+        password_confirmation: form_data['password_confirmation']
+      )
     end
 
     def registration_field_value(params, field)

@@ -7,6 +7,20 @@ require 'slim/include'
 module LockedCV
   # Base class for the LockedCV Web App
   class App < Roda
+    class FormValidationError < StandardError
+      attr_reader :errors, :values
+
+      def initialize(errors:, values:)
+        @errors = errors
+        @values = values
+        super(message)
+      end
+
+      def message
+        errors.values.first || 'Invalid form input'
+      end
+    end
+
     plugin :render, engine: 'slim', views: 'app/presentation/views'
     plugin :assets, css: 'style.css', path: 'app/presentation/assets'
     plugin :multi_route
@@ -49,6 +63,16 @@ module LockedCV
 
     def admin?
       @current_account.admin?
+    end
+
+    def validate_form(contract, params)
+      result = contract.call(params)
+      return result.to_h if result.success?
+
+      raise FormValidationError.new(
+        errors: Form.validation_errors(result),
+        values: Form.message_values(result)
+      )
     end
   end
 end

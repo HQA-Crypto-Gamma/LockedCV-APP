@@ -48,12 +48,17 @@ module LockedCV
       end
 
       routing.post do
+        form_data = validate_form(Form::AssignSystemRole, routing.params)
         AssignSystemRole.new(App.config, current_account: @current_account).call(
-          target_username: routing.params['username'].to_s,
-          role_name: routing.params['role'].to_s
+          target_username: form_data[:username].to_s.strip,
+          role_name: form_data[:role].to_s
         )
 
         flash[:notice] = 'Role updated'
+        routing.redirect '/settings'
+      rescue FormValidationError => e
+        App.logger.warn "ROLE UPDATE INVALID: #{e.inspect}"
+        flash[:error] = e.message
         routing.redirect '/settings'
       rescue AssignSystemRole::UnauthorizedError => e
         App.logger.warn "ROLE UPDATE UNAUTHORIZED: #{e.inspect}"

@@ -35,6 +35,23 @@ describe 'Attachment upload route' do
     assert_requested(:post, "#{API_URL}/attachments/upload")
   end
 
+  it 'BAD: rejects non-PDF uploads without calling the API' do
+    stub_login
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+
+    text_file = Tempfile.new(['lockedcv-app-route-upload', '.txt'])
+    text_file.write('not a pdf')
+    text_file.rewind
+    upload = Rack::Test::UploadedFile.new(text_file.path, 'text/plain', true, original_filename: 'notes.txt')
+    post '/attachments/upload', cv: upload
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/$}
+    assert_not_requested(:post, "#{API_URL}/attachments/upload")
+  ensure
+    text_file&.close!
+  end
+
   private
 
   def stub_login
