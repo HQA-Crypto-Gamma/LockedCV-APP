@@ -125,15 +125,6 @@ module LockedCV
       routing.redirect '/'
     end
 
-    def register_account(routing)
-      form_data = registration_data_from(routing)
-      ensure_password_confirmation!(form_data)
-      account = RegisterAccount.new(App.config).call(registration_payload(form_data))
-
-      flash[:notice] = "Account #{account['username']} created. Please log in."
-      routing.redirect '/'
-    end
-
     def complete_registration(routing, registration_token)
       token = RegistrationToken.load(registration_token)
       form_data = registration_data_from(routing).merge(
