@@ -22,6 +22,7 @@ gem 'base64'
 gem 'http', '~>5.1'
 
 # Security
+gem 'dry-validation', '~> 1.10'
 gem 'rbnacl', '~>7.1'
 
 # Debugging
