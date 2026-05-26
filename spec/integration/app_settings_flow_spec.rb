@@ -28,6 +28,19 @@ describe 'Settings flow' do
     assert_not_requested(:put, "#{API_URL}/accounts/alan-turing/system_roles/owner")
   end
 
+  it 'HAPPY: disables role controls for the current account' do
+    stub_login
+    stub_list_accounts
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+
+    get '/settings'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'Current account'
+    _(last_response.body).must_include %(aria-label="Role for ada-lovelace" disabled="")
+    _(last_response.body).must_include %(<button disabled="" type="submit">Update</button>)
+  end
+
   private
 
   def stub_login
@@ -35,6 +48,26 @@ describe 'Settings flow' do
            .to_return(
              status: 200,
              body: { data: { type: 'authenticated_account', attributes: @account } }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_list_accounts
+    accounts = [
+      @account.slice('id', 'username', 'email', 'roles'),
+      {
+        'id' => 'other-account-id',
+        'username' => 'alan-turing',
+        'email' => 'alan@example.com',
+        'roles' => ['member']
+      }
+    ]
+
+    WebMock.stub_request(:get, "#{API_URL}/accounts")
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
+           .to_return(
+             status: 200,
+             body: { data: accounts.map { |attributes| { attributes: } } }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end

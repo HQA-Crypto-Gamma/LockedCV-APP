@@ -62,7 +62,7 @@ module LockedCV
         routing.redirect '/settings'
       rescue AssignSystemRole::UnauthorizedError => e
         App.logger.warn "ROLE UPDATE UNAUTHORIZED: #{e.inspect}"
-        flash[:error] = 'Only admins can update roles'
+        flash[:error] = e.message.empty? ? 'Only admins can update roles' : e.message
         routing.redirect '/settings'
       rescue AssignSystemRole::ValidationError => e
         App.logger.warn "ROLE UPDATE INVALID: #{e.inspect}"
