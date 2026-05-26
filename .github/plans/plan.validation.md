@@ -11,7 +11,7 @@
 - App models 不做重要 domain decision；重要邏輯仍屬於 API models/policies。
 - App 應使用 API 回傳的 policy summaries/capabilities 來決定是否顯示 links/buttons/resources，不在 App 自己推論 authorization。
 
-## 現況分析（2026-05-25）
+## 現況分析（2026-05-26）
 
 - 專案：`LockedCV-APP`
 - 目前已有：
@@ -19,16 +19,27 @@
   - `CurrentSession` model：集中讀寫 secure session account/auth token。
   - `ApiClient`：集中 API URL、JSON parsing、Bearer token request。
   - Services：authenticate/register/verify registration/find/update/change password/list/delete/list attachments/upload attachment 等。
-  - Controllers 仍直接讀 `routing.params`，例如 login、registration、profile update、password update、settings role assignment、attachment upload/delete。
-  - `BirthdayValidator` service 做局部 validation，但 validation 仍分散。
-  - README 已列出 `birthday validation for registration and profile updates` 為待處理項。
-- 目前尚未有：
   - `dry-validation` dependency。
-  - `app/forms/` directory。
-  - App-side form contracts。
+  - `app/forms/` 與 shared `Form` helpers。
+  - Auth/registration/account/settings/attachment upload form contracts。
+  - Controllers 已開始在打 API 前用 form objects 驗證 login、registration、profile update、password update、settings role assignment、attachment upload。
+  - Validation failure specs 確認 invalid input 不會打 API。
+- 目前尚未有：
   - API response parser models for attachment/account lists/policy summaries。
-  - 統一 form error rendering convention。
+  - 統一 field-level form error rendering convention；目前多數 route 先使用 flash 或頁面訊息。
   - UI 使用 API policy summaries/capabilities 的 pattern。
+  - API policy summary 尚未正式接入 APP models/views。
+
+## API Policy Integration Notes
+
+- API `plan.policies.md` 會讓 resource responses 回傳 `policies`，current account response 回傳 `capabilities`。
+- App 不自行推論 authorization，只根據 API 回傳的 summary 控制 UI 顯示；API 仍是安全邊界。
+- Attachment 權限語意暫定：
+  - `can_view`：可看原始 PDF / raw sensitive data。
+  - `can_view_masked`：可看遮罩版 PDF / masked output。
+  - `can_delete`：可刪除該 attachment。
+  - `can_upload` 或 account capability：可上傳新的 attachment。
+- APP model parsing 需要把 `policies` 包成 readable object，例如 `attachment.policies.can_view_masked`，views 不直接讀 raw API hash。
 
 ## 參考方向
 
@@ -59,7 +70,7 @@
 
 ## Todo 清單
 
-1. `dry-validation-setup`
+1. ✅ `dry-validation-setup`
    - 在 Gemfile 加入 `dry-validation`。
    - 建立 `app/forms/`。
    - 建立 `app/forms/form_base.rb`。
@@ -82,7 +93,7 @@
      - `POST /attachments/:attachment_id/delete`
    - 每個 route 對應一個 form contract 或明確記錄不需要 schema 的原因。
 
-3. `auth-registration-forms`
+3. ✅ `auth-registration-forms`
    - `LoginCredentials`：
      - `username` required string。
      - `password` required string。
@@ -96,7 +107,7 @@
    - Controller 直接傳 `routing.params` 給 form object。
    - Service 只接 validated values，不直接接 raw params。
 
-4. `account-profile-password-forms`
+4. ✅ `account-profile-password-forms`
    - `AccountProfile`：
      - `email` required。
      - `phone_number` optional/required 依目前 UI。
@@ -109,7 +120,7 @@
      - custom rule：new password confirmation 必須一致。
    - 更新 account controller：validation failure 時 re-render form 並帶 errors/values。
 
-5. `settings-forms`
+5. ✅ `settings-forms`
    - `AssignSystemRole`：
      - `username` required。
      - `role` required，值必須在 App 已知 system roles 或 API documented roles 中。
@@ -117,7 +128,7 @@
      - 若 UI 有 confirmation input，建立 confirmation rule。
      - 如果只是 route target id，需確認 target id 不是 requesting user id 的 UI guard 只能當 UX；API policy 仍是安全邊界。
 
-6. `attachment-forms`
+6. ✅ `attachment-forms`
    - `UploadAttachment`：
      - `cv` required。
      - filename extension `.pdf` 的 App-side friendly validation。
@@ -128,7 +139,7 @@
      - `SensitiveData` form schema。
      - `ExportMaskedAttachment` form schema。
 
-7. `controller-form-adoption`
+7. ✅ `controller-form-adoption`
    - Controllers 不再直接用 `routing.params['field'].to_s.strip` 組 payload。
    - Pattern：
 
@@ -160,6 +171,8 @@
    - Views 根據 policy summary 顯示 actions：
      - `account.capabilities.can_list_accounts`
      - `attachment.policies.can_delete`
+     - `attachment.policies.can_view`
+     - `attachment.policies.can_view_masked`
      - `attachment.policies.can_export_masked_pdf`
    - UI hide/show 只當 UX；API policy 仍是安全邊界。
    - 若 API 尚未回傳 policy summaries，先以 current behavior 保留，並把 integration point 標為 deferred。
