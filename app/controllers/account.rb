@@ -52,6 +52,8 @@ module LockedCV
       store_current_account(updated_profile_account(routing))
       flash[:notice] = 'Profile updated'
       routing.redirect "/account/#{username}"
+    rescue FormValidationError => e
+      profile_update_failed(routing, e.message, 400)
     rescue UpdateAccount::ValidationError => e
       profile_update_failed(routing, e.message, 400)
     rescue UpdateAccount::ServiceUnavailableError => e
@@ -68,6 +70,8 @@ module LockedCV
       ensure_own_profile!(routing, username)
       change_current_password(routing)
       log_out_after_password_update(routing)
+    rescue FormValidationError => e
+      password_update_failed(e.message, 400)
     rescue ChangePassword::ValidationError => e
       password_update_failed(e.message, 400)
     rescue ChangePassword::ServiceUnavailableError => e
@@ -115,25 +119,30 @@ module LockedCV
     end
 
     def change_current_password(routing)
+      form_data = validate_form(Form::ChangePassword, routing.params)
       ChangePassword.new(App.config, current_account: @current_account).call(
-        password_data: {
-          current_password: routing.params['current_password'].to_s,
-          password: routing.params['password'].to_s,
-          password_confirmation: routing.params['password_confirmation'].to_s
-        }
+        password_data: form_data.slice(:current_password, :password, :password_confirmation)
       )
     end
 
     def profile_data_from(routing)
+      form_data = validate_form(Form::AccountProfile, routing.params)
+
       UpdateAccount::EDITABLE_FIELDS.to_h do |field|
-        [field, routing.params[field.to_s].to_s.strip]
+        [field, form_data[field].to_s.strip]
       end
     end
 
     def profile_form_data(routing)
       current_account_attributes.merge(
-        profile_data_from(routing).transform_keys(&:to_s)
+        raw_profile_data_from(routing).transform_keys(&:to_s)
       )
+    end
+
+    def raw_profile_data_from(routing)
+      UpdateAccount::EDITABLE_FIELDS.to_h do |field|
+        [field, routing.params[field.to_s].to_s.strip]
+      end
     end
 
     def current_account_profile

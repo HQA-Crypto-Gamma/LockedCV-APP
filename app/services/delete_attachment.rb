@@ -11,9 +11,9 @@ module LockedCV
       @client = ApiClient.new(config)
     end
 
-    def call(account_id:, attachment_id:, auth_token:)
+    def call(attachment_id:, auth_token:)
       @client.delete(
-        "/accounts/#{account_id}/attachments/#{attachment_id}",
+        "/attachments/#{attachment_id}",
         {},
         auth_token:
       )

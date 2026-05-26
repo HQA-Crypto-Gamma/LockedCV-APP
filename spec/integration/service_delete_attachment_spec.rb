@@ -4,10 +4,9 @@ require_relative '../spec_helper'
 
 describe 'DeleteAttachment service' do
   before do
-    @account_id = 'account-id'
     @attachment_id = 'attachment-id'
     @auth_token = 'auth-token'
-    @path = "#{API_URL}/accounts/#{@account_id}/attachments/#{@attachment_id}"
+    @path = "#{API_URL}/attachments/#{@attachment_id}"
   end
 
   after do
@@ -24,7 +23,6 @@ describe 'DeleteAttachment service' do
            )
 
     response = LockedCV::DeleteAttachment.new(app.config).call(
-      account_id: @account_id,
       attachment_id: @attachment_id,
       auth_token: @auth_token
     )
@@ -42,7 +40,6 @@ describe 'DeleteAttachment service' do
 
     _(proc {
       LockedCV::DeleteAttachment.new(app.config).call(
-        account_id: @account_id,
         attachment_id: @attachment_id,
         auth_token: @auth_token
       )
@@ -59,7 +56,6 @@ describe 'DeleteAttachment service' do
 
     _(proc {
       LockedCV::DeleteAttachment.new(app.config).call(
-        account_id: @account_id,
         attachment_id: @attachment_id,
         auth_token: @auth_token
       )
@@ -76,7 +72,6 @@ describe 'DeleteAttachment service' do
 
     _(proc {
       LockedCV::DeleteAttachment.new(app.config).call(
-        account_id: @account_id,
         attachment_id: @attachment_id,
         auth_token: @auth_token
       )

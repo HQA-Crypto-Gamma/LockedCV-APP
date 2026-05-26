@@ -5,9 +5,8 @@ require_relative '../spec_helper'
 
 describe 'UploadAttachment service' do
   before do
-    @account_id = 'account-id'
     @auth_token = 'auth-token'
-    @path = "#{API_URL}/accounts/#{@account_id}/attachments/upload"
+    @path = "#{API_URL}/attachments/upload"
     @attachment_attributes = {
       'id' => 'attachment-id',
       'attachment_name' => 'resume.pdf',
@@ -43,7 +42,6 @@ describe 'UploadAttachment service' do
            )
 
     attachment = LockedCV::UploadAttachment.new(app.config).call(
-      account_id: @account_id,
       auth_token: @auth_token,
       uploaded_file: @uploaded_file
     )
@@ -54,7 +52,6 @@ describe 'UploadAttachment service' do
   it 'BAD: validates missing files before calling API' do
     error = _(proc {
       LockedCV::UploadAttachment.new(app.config).call(
-        account_id: @account_id,
         auth_token: @auth_token,
         uploaded_file: nil
       )
@@ -74,7 +71,6 @@ describe 'UploadAttachment service' do
 
     _(proc {
       LockedCV::UploadAttachment.new(app.config).call(
-        account_id: @account_id,
         auth_token: @auth_token,
         uploaded_file: @uploaded_file
       )

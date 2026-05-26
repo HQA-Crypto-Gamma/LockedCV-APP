@@ -27,7 +27,7 @@ describe 'Attachment delete route' do
 
     _(last_response.status).must_equal 302
     _(last_response.location).must_match %r{/$}
-    assert_requested(:delete, "#{API_URL}/accounts/#{@account['id']}/attachments/#{@attachment_id}")
+    assert_requested(:delete, "#{API_URL}/attachments/#{@attachment_id}")
   end
 
   private
@@ -42,7 +42,7 @@ describe 'Attachment delete route' do
   end
 
   def stub_delete
-    WebMock.stub_request(:delete, "#{API_URL}/accounts/#{@account['id']}/attachments/#{@attachment_id}")
+    WebMock.stub_request(:delete, "#{API_URL}/attachments/#{@attachment_id}")
            .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
            .to_return(
              status: 200,

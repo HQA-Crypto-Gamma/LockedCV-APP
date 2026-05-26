@@ -73,7 +73,7 @@ password: alan-secret
 The App currently includes:
 
 - public home page with login modal
-- account registration page
+- two-step email verification registration flow
 - login and logout flow
 - encrypted server-side session values
 - API-issued auth token stored in secure session
@@ -82,6 +82,7 @@ The App currently includes:
 - account profile edit/update flow
 - change password page that logs the user out after a successful update
 - document history loaded from the API
+- PDF upload and attachment delete actions forwarded to the API
 - admin settings page for listing accounts, updating system roles, and deleting
   accounts
 - birthday validation for registration and profile updates
@@ -93,6 +94,10 @@ Current routes:
 - `POST /auth/login`
 - `GET /auth/register`
 - `POST /auth/register`
+- `GET /auth/register/:registration_token`
+- `POST /auth/register/:registration_token`
+- `POST /attachments/upload`
+- `POST /attachments/:attachment_id/delete`
 - `GET /account/:username`
 - `GET /account/:username/edit`
 - `POST /account/:username`
@@ -111,8 +116,18 @@ production sessions are Redis-backed, and HTTPS enforcement is configured.
 Authenticated API calls now send `Authorization: Bearer <TOKEN>` using the
 token returned by the API login response. The App uses token-scoped API paths
 for current-account profile, password, and attachment-list calls, so it does not
-send the requesting user's account id in those requests. Email verification
-registration still needs to be added.
+send the requesting user's account id in those requests.
+
+Email verification registration is implemented in the App. The App encrypts
+`email` and `username` into a `RegistrationToken`, builds
+`APP_URL/auth/register/:token`, asks the API to send that URL through Mailgun,
+then creates the account after the user follows the link and completes the
+confirmation form. Registration tokens are encrypted and tamper-resistant but
+currently do not expire.
+
+Attachment upload/delete actions are implemented as App routes that forward to
+the API. The API owns file storage and attachment database records; this repo
+does not store uploaded files or attachment metadata locally.
 
 Current protected API calls:
 
@@ -120,9 +135,17 @@ Current protected API calls:
 - `PUT /api/v1/account`
 - `PUT /api/v1/account/password`
 - `GET /api/v1/attachments`
+- `POST /api/v1/accounts/registration/check`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/accounts`
+- `POST /api/v1/attachments/upload`
+- `DELETE /api/v1/attachments/:attachment_id`
 - `GET /api/v1/accounts` for admins
 - `DELETE /api/v1/accounts/:target_account_id` for admins
 - `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admins
+
+Current-user API calls use token-scoped paths. Admin actions still include a
+target account id or username because they operate on another account.
 
 ## Checks
 

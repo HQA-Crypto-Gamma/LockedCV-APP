@@ -33,6 +33,8 @@ module LockedCV
 
       flash[:notice] = 'CV uploaded successfully'
       routing.redirect '/'
+    rescue FormValidationError => e
+      upload_form_failed(routing, e)
     rescue UploadAttachment::ValidationError => e
       upload_failed(routing, e, e.message, :warn)
     rescue UploadAttachment::UnauthorizedError => e
@@ -42,10 +44,10 @@ module LockedCV
     end
 
     def upload_selected_attachment(routing)
+      form_data = validate_form(Form::UploadAttachment, routing.params)
       UploadAttachment.new(App.config).call(
-        account_id: @current_account.id,
         auth_token: @current_account.auth_token,
-        uploaded_file: routing.params['cv']
+        uploaded_file: form_data[:cv]
       )
     end
 
@@ -53,6 +55,12 @@ module LockedCV
       App.logger.public_send(level, "ATTACHMENT UPLOAD FAILED: #{error.inspect}")
       flash[:error] = message
       routing.redirect destination
+    end
+
+    def upload_form_failed(routing, error)
+      App.logger.warn "ATTACHMENT UPLOAD INVALID: #{error.inspect}"
+      flash[:error] = error.message
+      routing.redirect '/'
     end
 
     def delete_current_account_attachment(routing, attachment_id)
@@ -70,7 +78,6 @@ module LockedCV
 
     def delete_selected_attachment(attachment_id)
       DeleteAttachment.new(App.config).call(
-        account_id: @current_account.id,
         attachment_id:,
         auth_token: @current_account.auth_token
       )
