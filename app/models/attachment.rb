@@ -1,0 +1,25 @@
+# frozen_string_literal: true
+
+module LockedCV
+  # APP-side attachment wrapper built from one API list entry.
+  class Attachment
+    attr_reader :attributes, :policy
+
+    def initialize(api_entry)
+      @attributes = api_entry.fetch('data').fetch('attributes')
+      @policy = api_entry.fetch('policy', {})
+    end
+
+    def id
+      attributes['id']
+    end
+
+    def attachment_name
+      attributes['attachment_name']
+    end
+
+    def can_delete?
+      policy['can_delete'] == true
+    end
+  end
+end

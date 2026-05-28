@@ -60,7 +60,7 @@
             tr
               td.empty-table colspan="6" No uploaded CV files yet.
           - attachments.each do |attachment|
-            - attachment_name = attachment['attachment_name'].to_s
+            - attachment_name = attachment.attachment_name.to_s
             - extension = File.extname(attachment_name).delete('.').upcase
             - extension = 'FILE' if extension.empty?
             tr
@@ -77,9 +77,10 @@
                 span.muted-value -
               td = '-'
               td
-                form.inline-action-form method="post" action="/attachments/#{attachment['id']}/delete"
-                  button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
-                    span.trash-icon aria-hidden="true"
+                - if attachment.can_delete?
+                  form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
+                    button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
+                      span.trash-icon aria-hidden="true"
 - else
   section.public-home
     .public-home__copy
