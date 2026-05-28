@@ -22,7 +22,7 @@ module LockedCV
       validate!(profile_data)
 
       response = update_account(profile_data)
-      response.fetch('data').fetch('data').fetch('attributes')
+      ApiClient.attributes_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError, KeyError => e
@@ -68,8 +68,7 @@ module LockedCV
     end
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("Account update API unavailable: #{details}")
+      ServiceUnavailableError.new("Account update API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end

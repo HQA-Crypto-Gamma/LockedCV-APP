@@ -23,8 +23,7 @@ module LockedCV
     private
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("Attachments API unavailable: #{details}")
+      ServiceUnavailableError.new("Attachments API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end
