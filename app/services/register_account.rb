@@ -24,7 +24,7 @@ module LockedCV
       validate!(registration_data)
 
       response = @client.post('/accounts', registration_payload(registration_data))
-      response.fetch('data').fetch('data').fetch('attributes')
+      ApiClient.attributes_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError, KeyError => e
@@ -66,8 +66,7 @@ module LockedCV
     end
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("Registration API unavailable: #{details}")
+      ServiceUnavailableError.new("Registration API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end

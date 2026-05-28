@@ -45,6 +45,14 @@ module LockedCV
       parse(http(auth_token).get(url_with_params(path, params)))
     end
 
+    def self.attributes_from(response)
+      response.fetch('data').fetch('data').fetch('attributes')
+    end
+
+    def self.error_details(error)
+      [error.class, error.message].compact.join(': ')
+    end
+
     private
 
     def http(auth_token)
