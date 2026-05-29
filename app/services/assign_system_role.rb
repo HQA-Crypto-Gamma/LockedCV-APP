@@ -18,7 +18,7 @@ module LockedCV
         {},
         auth_token: @current_account.auth_token
       )
-      response.fetch('data').fetch('data').fetch('attributes')
+      ApiClient.attributes_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError, KeyError => e
@@ -35,8 +35,7 @@ module LockedCV
     end
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("System role API unavailable: #{details}")
+      ServiceUnavailableError.new("System role API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end

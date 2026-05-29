@@ -33,8 +33,7 @@ module LockedCV
     end
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("Delete account API unavailable: #{details}")
+      ServiceUnavailableError.new("Delete account API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end

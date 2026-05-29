@@ -48,7 +48,15 @@ form handling, and Slim view rendering.
 - `GET /` renders the public home page or the logged-in CV vault.
 - `POST /auth/login` authenticates against `LockedCV-API`.
 - `GET /auth/register` renders the registration form.
-- `POST /auth/register` creates an account through `LockedCV-API`.
+- `POST /auth/register` checks availability, creates a registration token, and
+  asks `LockedCV-API` to send the verification email.
+- `GET /auth/register/:registration_token` renders the final account creation
+  form after the user follows the email link.
+- `POST /auth/register/:registration_token` creates the account through
+  `LockedCV-API`.
+- `POST /attachments/upload` forwards a selected PDF to `LockedCV-API`.
+- `POST /attachments/:attachment_id/delete` deletes an attachment through
+  `LockedCV-API`.
 - `GET /account/:username` renders the logged-in account overview.
 - `GET /account/:username/edit` renders the editable account profile form.
 - `POST /account/:username` updates editable account profile fields through
@@ -100,18 +108,26 @@ Expected failure response:
 
 Other API-facing services call:
 
+- `POST /api/v1/accounts/registration/check` before requesting a verification
+  email.
+- `POST /api/v1/auth/register` to ask the API to send the Mailgun verification
+  email.
 - `POST /api/v1/accounts` for registration.
 - `GET /api/v1/account` for current account profile data.
 - `PUT /api/v1/account` for current account profile updates.
 - `PUT /api/v1/account/password` for current account password changes.
 - `GET /api/v1/attachments` for current account document history.
+- `POST /api/v1/attachments/upload` for current account attachment upload.
+- `DELETE /api/v1/attachments/:attachment_id` for current account attachment
+  delete.
 - `GET /api/v1/accounts` for admin account listing.
 - `DELETE /api/v1/accounts/:target_account_id` for admin account deletion.
 - `PUT /api/v1/accounts/:target_username/system_roles/:role_name` for admin
   role updates.
 
-Current-user calls must not put the requesting user's id or username in the API
-path/query/body. Target id/username is acceptable for admin actions.
+Current-user calls should prefer token-scoped API paths and should not put the
+requesting user's id or username in the API path/query/body. Target id/username
+is acceptable for admin actions.
 
 ## Development Boundary
 
@@ -126,14 +142,17 @@ This branch has the authenticated-session Web App foundation in place:
 - admin settings flow
 - admin account delete flow
 - document history from the API
+- attachment upload/delete forwarding to the API
+- email verification registration flow
+- encrypted registration tokens containing email/username
 - cookie-backed session
 - flash notices/errors
 - role-aware view hooks
 - WebMock service tests
 
-Registration, profile update, password change, admin lookup/update/delete, auth
-token session storage, and bearer-token API calls are implemented. Email
-verification registration still needs to be added.
+Registration, email verification kickoff/confirmation, profile update, password
+change, admin lookup/update/delete, auth token session storage, and bearer-token
+API calls are implemented. Registration tokens currently do not expire.
 
 ## Validation
 

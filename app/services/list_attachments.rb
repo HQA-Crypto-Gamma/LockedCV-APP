@@ -15,7 +15,7 @@ module LockedCV
         '/attachments',
         auth_token: @current_account.auth_token
       )
-      response.fetch('data').map { |entry| entry.fetch('data').fetch('attributes') }
+      response.fetch('data').map { |entry| Attachment.new(entry) }
     rescue ApiClient::ApiError, HTTP::Error, JSON::ParserError => e
       raise unavailable_error_for(e)
     end
@@ -23,8 +23,7 @@ module LockedCV
     private
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("Attachments API unavailable: #{details}")
+      ServiceUnavailableError.new("Attachments API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end

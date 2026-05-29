@@ -11,11 +11,11 @@ module LockedCV
       @client = ApiClient.new(config)
     end
 
-    def call(account_id:, auth_token:, uploaded_file:)
+    def call(auth_token:, uploaded_file:)
       ensure_upload_present!(uploaded_file)
 
-      upload_response(account_id:, auth_token:, uploaded_file:)
-        .fetch('data').fetch('data').fetch('attributes')
+      response = upload_response(auth_token:, uploaded_file:)
+      ApiClient.attributes_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError => e
@@ -24,9 +24,9 @@ module LockedCV
 
     private
 
-    def upload_response(account_id:, auth_token:, uploaded_file:)
+    def upload_response(auth_token:, uploaded_file:)
       @client.post_multipart(
-        "/accounts/#{account_id}/attachments/upload",
+        '/attachments/upload',
         {
           file: multipart_file(uploaded_file),
           original_filename: uploaded_value(uploaded_file, :filename)

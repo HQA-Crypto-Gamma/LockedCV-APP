@@ -13,23 +13,24 @@ section
       - accounts.each do |account|
         - roles = Array(account['roles'])
         - current_role = roles.include?('admin') ? 'admin' : 'member'
+        - current_account_row = account['id'] == @current_account.id || account['username'] == @current_account.username
         tr
           td = account['username']
           td = account['email']
           td
             form.role-form method="post" action="/settings"
               input type="hidden" name="username" value=account['username']
-              select name="role" aria-label="Role for #{account['username']}"
+              select name="role" aria-label="Role for #{account['username']}" disabled=current_account_row
                 option value="member" selected=(current_role == 'member') Member
                 option value="admin" selected=(current_role == 'admin') Admin
-              button type="submit" Update
+              button type="submit" disabled=current_account_row Update
           td
             - if roles.empty?
               span.muted-value No role yet
             - else
               span.muted-value = roles.join(', ')
           td
-            - if account['id'] == @current_account.id
+            - if current_account_row
               span.muted-value Current account
             - else
               form.delete-account-form method="post" action="/settings/accounts/#{account['id']}/delete"

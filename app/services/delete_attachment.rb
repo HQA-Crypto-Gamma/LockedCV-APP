@@ -11,9 +11,9 @@ module LockedCV
       @client = ApiClient.new(config)
     end
 
-    def call(account_id:, attachment_id:, auth_token:)
+    def call(attachment_id:, auth_token:)
       @client.delete(
-        "/accounts/#{account_id}/attachments/#{attachment_id}",
+        "/attachments/#{attachment_id}",
         {},
         auth_token:
       )
@@ -33,8 +33,7 @@ module LockedCV
     end
 
     def unavailable_error_for(error)
-      details = [error.class, error.message].compact.join(': ')
-      ServiceUnavailableError.new("Delete attachment API unavailable: #{details}")
+      ServiceUnavailableError.new("Delete attachment API unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end
