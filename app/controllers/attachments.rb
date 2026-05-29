@@ -17,6 +17,13 @@ module LockedCV
       end
 
       routing.on String do |attachment_id|
+        routing.on 'scan' do
+          # GET /attachments/[attachment_id]/scan
+          routing.get do
+            show_attachment_scan(routing, attachment_id)
+          end
+        end
+
         routing.on 'delete' do
           # POST /attachments/[attachment_id]/delete
           routing.post do
@@ -29,12 +36,14 @@ module LockedCV
     private
 
     def upload_current_account_attachment(routing)
-      upload_selected_attachment(routing)
+      attachment = upload_selected_attachment(routing)
 
       flash[:notice] = 'CV uploaded successfully'
-      routing.redirect '/'
+      routing.redirect "/attachments/#{attachment.fetch('id')}/scan"
     rescue FormValidationError => e
       upload_form_failed(routing, e)
+    rescue KeyError => e
+      upload_failed(routing, e, 'Attachment upload returned an invalid response', :error)
     rescue UploadAttachment::ValidationError => e
       upload_failed(routing, e, e.message, :warn)
     rescue UploadAttachment::UnauthorizedError => e
@@ -49,6 +58,31 @@ module LockedCV
         auth_token: @current_account.auth_token,
         uploaded_file: form_data[:cv]
       )
+    end
+
+    def show_attachment_scan(routing, attachment_id)
+      scan_result = GetMaskedAttachmentText.new(App.config).call(
+        attachment_id:,
+        auth_token: @current_account.auth_token
+      )
+
+      view :attachment_scan,
+           locals: {
+             current_account: @current_account,
+             scan_result:
+           }
+    rescue GetMaskedAttachmentText::NotFoundError => e
+      scan_failed(routing, e, 'Attachment not found', :warn)
+    rescue GetMaskedAttachmentText::UnauthorizedError => e
+      scan_failed(routing, e, 'Please log in again before scanning', :warn, '/#login-modal')
+    rescue GetMaskedAttachmentText::ServiceUnavailableError => e
+      scan_failed(routing, e, 'Attachment scan is temporarily unavailable', :error)
+    end
+
+    def scan_failed(routing, error, message, level, destination = '/')
+      App.logger.public_send(level, "ATTACHMENT SCAN FAILED: #{error.inspect}")
+      flash[:error] = message
+      routing.redirect destination
     end
 
     def upload_failed(routing, error, message, level, destination = '/')
