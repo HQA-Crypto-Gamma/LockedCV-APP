@@ -1,0 +1,42 @@
+- field_labels = { 'first_name' => 'First name', 'last_name' => 'Last name', 'email' => 'Email', 'phone_number' => 'Phone number', 'birthday' => 'Birthday', 'address' => 'Address', 'identification_number' => 'ID number', 'identification_numbers' => 'ID numbers' }
+
+section.scan-hero
+  div
+    p.eyebrow Scan preview
+    h1 Mask Review
+  .scan-hero__meta
+    span Detected fields
+    strong = scan_result.match_count
+
+section.scan-workspace aria-label="Attachment scan workspace"
+  .scan-preview-panel
+    .scan-panel-heading
+      div
+        p.panel-kicker Preview
+        h2 Masked text
+      span.status-pill.status-pill--masked Ready
+    pre.scan-preview-text = scan_result.masked_text
+
+  aside.scan-fields-panel
+    .scan-panel-heading
+      div
+        p.panel-kicker Review
+        h2 Detected fields
+    - if scan_result.empty?
+      p.scan-empty No sensitive fields detected.
+    - else
+      ul.scan-match-list
+        - scan_result.matches.each_with_index do |match, index|
+          - type = match['type'].to_s
+          - value = match['value'].to_s
+          - source = match['source'].to_s
+          li.scan-match-item
+            label.scan-match-control for="mask-match-#{index}"
+              input id="mask-match-#{index}" type="checkbox" checked=true
+              span.scan-match-check
+            .scan-match-content
+              .scan-match-title
+                strong = field_labels.fetch(type, type.split('_').map(&:capitalize).join(' '))
+                - unless source.empty?
+                  span = source.tr('_', ' ')
+              code = value
