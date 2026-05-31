@@ -12,8 +12,6 @@ module LockedCV
     end
 
     def call(password_data:)
-      validate!(password_data)
-
       @client.put(
         '/account/password',
         password_payload(password_data),
@@ -26,16 +24,6 @@ module LockedCV
     end
 
     private
-
-    def validate!(password_data)
-      if password_data[:current_password].to_s.empty? || password_data[:password].to_s.empty?
-        raise ValidationError, 'Current password and new password are required'
-      end
-
-      return if password_data[:password] == password_data[:password_confirmation]
-
-      raise ValidationError, 'Password confirmation does not match'
-    end
 
     def password_payload(password_data)
       {

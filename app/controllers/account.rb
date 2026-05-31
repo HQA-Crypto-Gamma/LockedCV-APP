@@ -121,7 +121,7 @@ module LockedCV
     def change_current_password(routing)
       form_data = validate_form(Form::ChangePassword, routing.params)
       ChangePassword.new(App.config, current_account: @current_account).call(
-        password_data: form_data.slice(:current_password, :password, :password_confirmation)
+        password_data: form_data.slice(:current_password, :password)
       )
     end
 
