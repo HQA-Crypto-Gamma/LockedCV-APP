@@ -85,7 +85,10 @@ The App currently includes:
 - PDF upload and attachment delete actions forwarded to the API
 - admin settings page for listing accounts, updating system roles, and deleting
   accounts
+- dry-validation form objects for login, registration, profile updates,
+  password changes, settings role assignment, and attachment upload
 - birthday validation for registration and profile updates
+- attachment policy summary parsing for delete-action visibility
 - flash messages and role-aware navigation
 
 Current routes:
@@ -128,6 +131,16 @@ currently do not expire.
 Attachment upload/delete actions are implemented as App routes that forward to
 the API. The API owns file storage and attachment database records; this repo
 does not store uploaded files or attachment metadata locally.
+
+Form input is validated in `app/forms/` before controllers call services.
+Services should receive validated values and focus on API payload shaping,
+Bearer-token API calls, response parsing, and API error mapping. The API remains
+the final security and data-validation boundary.
+
+Attachment list responses are parsed into App-side `Attachment` models. The
+home view uses the API policy summary, currently `attachment.can_delete?`, to
+hide delete actions for attachments the current account cannot delete. UI
+policy checks are only a user-flow aid; the API still enforces authorization.
 
 Current protected API calls:
 

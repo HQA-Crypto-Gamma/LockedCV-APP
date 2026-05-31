@@ -31,6 +31,11 @@ form handling, and Slim view rendering.
 
 - Do not add database models, migrations, or direct SQLite access to this repo.
 - Use service objects under `app/services/` for HTTP calls to the API.
+- Use form contracts under `app/forms/` for web form validation. Controllers
+  should pass raw `routing.params` to form contracts, then pass validated values
+  to services.
+- Keep form-only fields, such as password confirmations, out of service/API
+  payloads after form validation succeeds.
 - Keep API URLs configurable through `config/secrets.yml`, not hardcoded in
   controllers or views.
 - Use `Account` and `CurrentSession` for logged-in account/session state.
@@ -42,6 +47,12 @@ form handling, and Slim view rendering.
   `Authorization: Bearer <TOKEN>` via `HTTP.auth`.
 - API authorization is the security boundary. App-side role checks are for
   navigation, button visibility, and user flow only.
+- Services should focus on API payload shaping, API calls, API response parsing,
+  and API error mapping. Avoid duplicating form-shape validation in services
+  when a controller already validated the request with a form contract.
+- App models under `app/models/` should parse API envelopes and expose readable
+  view helpers. For attachments, use `Attachment#can_delete?` rather than
+  reading the raw API policy hash in views.
 
 ## Expected Routes
 
@@ -129,6 +140,11 @@ Current-user calls should prefer token-scoped API paths and should not put the
 requesting user's id or username in the API path/query/body. Target id/username
 is acceptable for admin actions.
 
+`GET /api/v1/attachments` returns attachment resource envelopes with policy
+summaries. `ListAttachments` converts each entry into an `Attachment` app model;
+views should use model predicates such as `can_delete?` to decide whether to
+show actions.
+
 ## Development Boundary
 
 This branch has the authenticated-session Web App foundation in place:
@@ -142,6 +158,8 @@ This branch has the authenticated-session Web App foundation in place:
 - admin settings flow
 - admin account delete flow
 - document history from the API
+- attachment list parsing through the `Attachment` app model
+- policy-summary driven attachment delete visibility
 - attachment upload/delete forwarding to the API
 - email verification registration flow
 - encrypted registration tokens containing email/username
