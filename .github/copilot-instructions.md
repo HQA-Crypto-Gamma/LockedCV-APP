@@ -31,6 +31,11 @@ form handling, and Slim view rendering.
 
 - Do not add database models, migrations, or direct SQLite access to this repo.
 - Use service objects under `app/services/` for HTTP calls to the API.
+- Use form contracts under `app/forms/` for web form validation. Controllers
+  should pass raw `routing.params` to form contracts, then pass validated values
+  to services.
+- Keep form-only fields, such as password confirmations, out of service/API
+  payloads after form validation succeeds.
 - Keep API URLs configurable through `config/secrets.yml`, not hardcoded in
   controllers or views.
 - Use `Account` and `CurrentSession` for logged-in account/session state.
@@ -40,8 +45,19 @@ form handling, and Slim view rendering.
   values in session data.
 - Use `ApiClient` with `auth_token:` for authorized API calls. It sends
   `Authorization: Bearer <TOKEN>` via `HTTP.auth`.
+- Login/session tokens returned by the API are full-scope (`*:write`). The App
+  displays separate read-only account API keys (`*:read`) returned by the API;
+  do not treat the session token as a shareable API key.
+- If the API returns `401` for an existing session after scoped token changes,
+  clear the session and require the user to log in again.
 - API authorization is the security boundary. App-side role checks are for
   navigation, button visibility, and user flow only.
+- Services should focus on API payload shaping, API calls, API response parsing,
+  and API error mapping. Avoid duplicating form-shape validation in services
+  when a controller already validated the request with a form contract.
+- App models under `app/models/` should parse API envelopes and expose readable
+  view helpers. For attachments, use `Attachment#can_delete?` rather than
+  reading the raw API policy hash in views.
 
 ## Expected Routes
 
@@ -114,6 +130,8 @@ Other API-facing services call:
   email.
 - `POST /api/v1/accounts` for registration.
 - `GET /api/v1/account` for current account profile data.
+- `GET /api/v1/accounts/:username` for the read-only API key displayed on the
+  account overview page.
 - `PUT /api/v1/account` for current account profile updates.
 - `PUT /api/v1/account/password` for current account password changes.
 - `GET /api/v1/attachments` for current account document history.
@@ -129,6 +147,17 @@ Current-user calls should prefer token-scoped API paths and should not put the
 requesting user's id or username in the API path/query/body. Target id/username
 is acceptable for admin actions.
 
+The account overview intentionally uses two services:
+
+- `FindAccount` calls `GET /api/v1/account` and returns profile attributes.
+- `GetAccountApiKey` calls `GET /api/v1/accounts/:username` and returns only
+  the read-only API key. Controllers pass this to Slim as `api_key`.
+
+`GET /api/v1/attachments` returns attachment resource envelopes with policy
+summaries. `ListAttachments` converts each entry into an `Attachment` app model;
+views should use model predicates such as `can_delete?` to decide whether to
+show actions.
+
 ## Development Boundary
 
 This branch has the authenticated-session Web App foundation in place:
@@ -138,10 +167,13 @@ This branch has the authenticated-session Web App foundation in place:
 - login/logout flow
 - basic registration flow
 - profile update flow
+- read-only account API key display
 - change password flow
 - admin settings flow
 - admin account delete flow
 - document history from the API
+- attachment list parsing through the `Attachment` app model
+- policy-summary driven attachment delete visibility
 - attachment upload/delete forwarding to the API
 - email verification registration flow
 - encrypted registration tokens containing email/username

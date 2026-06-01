@@ -1,4 +1,5 @@
 - editing ||= false
+- api_key ||= nil
 
 section.profile-page
   .section-heading
@@ -39,3 +40,14 @@ section.profile-page
 
         label for="profile-identification-numbers" Identification numbers
         input#profile-identification-numbers type="text" name="identification_numbers" value=account['identification_numbers'] disabled=!editing
+
+section.profile-page
+  .section-heading
+    div
+      h2 API key
+
+  - if api_key
+    .form-stack.profile-form
+      label for="profile-api-key" Read-only API key
+      textarea#profile-api-key rows="3" readonly=true
+        = api_key

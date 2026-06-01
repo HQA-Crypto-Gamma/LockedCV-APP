@@ -79,13 +79,17 @@ The App currently includes:
 - API-issued auth token stored in secure session
 - Redis-backed production session storage
 - account overview page
+- read-only account API key display on the account overview page
 - account profile edit/update flow
 - change password page that logs the user out after a successful update
 - document history loaded from the API
 - PDF upload and attachment delete actions forwarded to the API
 - admin settings page for listing accounts, updating system roles, and deleting
   accounts
+- dry-validation form objects for login, registration, profile updates,
+  password changes, settings role assignment, and attachment upload
 - birthday validation for registration and profile updates
+- attachment policy summary parsing for delete-action visibility
 - flash messages and role-aware navigation
 
 Current routes:
@@ -117,6 +121,11 @@ Authenticated API calls now send `Authorization: Bearer <TOKEN>` using the
 token returned by the API login response. The App uses token-scoped API paths
 for current-account profile, password, and attachment-list calls, so it does not
 send the requesting user's account id in those requests.
+API login/session tokens are full-scope (`*:write`). The account overview page
+also fetches a read-only API key (`*:read`) from
+`GET /api/v1/accounts/:username` and displays it for command-line/deputy use.
+If an old session token was issued before scoped tokens existed, the API treats
+it as invalid and the user should log in again.
 
 Email verification registration is implemented in the App. The App encrypts
 `email` and `username` into a `RegistrationToken`, builds
@@ -129,9 +138,21 @@ Attachment upload/delete actions are implemented as App routes that forward to
 the API. The API owns file storage and attachment database records; this repo
 does not store uploaded files or attachment metadata locally.
 
+Form input is validated in `app/forms/` before controllers call services.
+Services should receive validated values and focus on API payload shaping,
+Bearer-token API calls, response parsing, and API error mapping. The API remains
+the final security and data-validation boundary.
+
+Attachment list responses are parsed into App-side `Attachment` models. The
+home view uses the API policy summary, currently `attachment.can_delete?`, to
+hide delete actions for attachments the current account cannot delete. UI
+policy checks are only a user-flow aid; the API still enforces authorization.
+
 Current protected API calls:
 
 - `GET /api/v1/account`
+- `GET /api/v1/accounts/:username` to fetch a read-only account API key for the
+  profile page
 - `PUT /api/v1/account`
 - `PUT /api/v1/account/password`
 - `GET /api/v1/attachments`
@@ -146,6 +167,10 @@ Current protected API calls:
 
 Current-user API calls use token-scoped paths. Admin actions still include a
 target account id or username because they operate on another account.
+The profile page keeps profile data and API-key retrieval separate:
+`FindAccount` calls `GET /api/v1/account`, while `GetAccountApiKey` calls
+`GET /api/v1/accounts/:username` and passes the returned key to the Slim view as
+an explicit `api_key` local.
 
 ## Checks
 

@@ -25,7 +25,12 @@ describe 'ListAttachments service' do
                data: [
                  {
                    data: { attributes: @attachment_attributes },
-                   policy: { can_delete: true }
+                   policy: {
+                     can_view: true,
+                     can_view_masked: true,
+                     can_delete: true,
+                     role: 'owner'
+                   }
                  }
                ]
              }.to_json,
@@ -38,10 +43,15 @@ describe 'ListAttachments service' do
     _(attachments.first).must_be_instance_of LockedCV::Attachment
     _(attachments.first.id).must_equal 'attachment-id'
     _(attachments.first.attachment_name).must_equal 'resume.pdf'
+    _(attachments.first.role).must_equal 'owner'
+    _(attachments.first.owner?).must_equal true
+    _(attachments.first.viewer_masked?).must_equal false
+    _(attachments.first.can_view?).must_equal true
+    _(attachments.first.can_view_masked?).must_equal true
     _(attachments.first.can_delete?).must_equal true
   end
 
-  it 'HAPPY: returns attachment models without delete permission from policy' do
+  it 'HAPPY: returns attachment models for masked viewers from policy' do
     WebMock.stub_request(:get, @path)
            .with(headers: { 'Authorization' => 'Bearer auth-token' })
            .to_return(
@@ -50,7 +60,12 @@ describe 'ListAttachments service' do
                data: [
                  {
                    data: { attributes: @attachment_attributes },
-                   policy: { can_delete: false }
+                   policy: {
+                     can_view: false,
+                     can_view_masked: true,
+                     can_delete: false,
+                     role: 'viewer_masked'
+                   }
                  }
                ]
              }.to_json,
@@ -61,6 +76,11 @@ describe 'ListAttachments service' do
 
     _(attachments.first.id).must_equal 'attachment-id'
     _(attachments.first.attachment_name).must_equal 'resume.pdf'
+    _(attachments.first.role).must_equal 'viewer_masked'
+    _(attachments.first.owner?).must_equal false
+    _(attachments.first.viewer_masked?).must_equal true
+    _(attachments.first.can_view?).must_equal false
+    _(attachments.first.can_view_masked?).must_equal true
     _(attachments.first.can_delete?).must_equal false
   end
 
@@ -81,6 +101,11 @@ describe 'ListAttachments service' do
 
     _(attachments.first.id).must_equal 'attachment-id'
     _(attachments.first.attachment_name).must_equal 'resume.pdf'
+    _(attachments.first.role).must_be_nil
+    _(attachments.first.owner?).must_equal false
+    _(attachments.first.viewer_masked?).must_equal false
+    _(attachments.first.can_view?).must_equal false
+    _(attachments.first.can_view_masked?).must_equal false
     _(attachments.first.can_delete?).must_equal false
   end
 
