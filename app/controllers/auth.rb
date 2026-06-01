@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'roda'
+require 'securerandom'
+require 'uri'
 require_relative 'app'
 
 module LockedCV
@@ -11,6 +13,8 @@ module LockedCV
       identification_numbers password password_confirmation
     ].freeze
     API_REGISTRATION_FIELDS = REGISTRATION_FIELDS - %w[password_confirmation]
+    GOOGLE_SCOPE = 'openid email profile'
+    GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 
     # rubocop:disable Metrics/BlockLength
     route('auth') do |routing|
@@ -34,6 +38,28 @@ module LockedCV
           App.logger.error "AUTHENTICATION SERVICE UNAVAILABLE: #{e.inspect}"
           flash[:error] = 'Authentication service is temporarily unavailable'
           routing.redirect '/'
+        end
+      end
+
+      routing.on 'sso', 'google' do
+        routing.is do
+          # GET /auth/sso/google
+          routing.get do
+            state = session['sso_state'] = SecureRandom.hex(16)
+            routing.redirect google_oauth_url(state)
+          end
+        end
+
+        routing.is 'callback' do
+          # GET /auth/sso/google/callback
+          routing.get do
+            verify_sso_state!(routing)
+            flash[:notice] = 'Google sign-in callback verified'
+            routing.redirect '/'
+          rescue SsoStateError
+            flash[:error] = 'Sign-in session expired or could not be verified'
+            routing.redirect '/'
+          end
         end
       end
 
@@ -127,6 +153,41 @@ module LockedCV
     # rubocop:enable Metrics/BlockLength
 
     private
+
+    class SsoStateError < StandardError; end
+
+    def google_oauth_url(state)
+      "#{google_auth_url}?#{google_oauth_query(state)}"
+    end
+
+    def google_oauth_query(state)
+      URI.encode_www_form(
+        client_id: google_client_id,
+        redirect_uri: google_redirect_uri,
+        response_type: 'code',
+        scope: GOOGLE_SCOPE,
+        state:
+      )
+    end
+
+    def google_redirect_uri
+      "#{App.config.APP_URL}/auth/sso/google/callback"
+    end
+
+    def google_auth_url
+      App.config.GOOGLE_AUTH_URL || GOOGLE_AUTH_URL
+    end
+
+    def google_client_id
+      App.config.GOOGLE_CLIENT_ID || ('test-google-client-id' if App.environment == :test)
+    end
+
+    def verify_sso_state!(routing)
+      expected_state = session.delete('sso_state')
+      return if expected_state && routing.params['state'] == expected_state
+
+      raise SsoStateError
+    end
 
     def login_account(routing)
       authenticated = AuthenticateAccount.new(App.config).call(**credentials_from(routing.params))
