@@ -15,7 +15,7 @@
   7. API 驗證後回傳 LockedCV account 與 full-scope auth token，App 建立 session。
 - 不使用 Google packaged gems；只用 `http` 與 `jwt` gems / standard library。
 
-## 現況分析（2026-05-31）
+## 現況分析（更新：2026-06-01）
 
 - 專案：`LockedCV-APP`
 - 目前已有：
@@ -24,13 +24,14 @@
   - `Account` / `CurrentSession`：保存 account info 與 API auth token。
   - Account profile page：`GET /account/:username`。
   - `FindAccount` service：呼叫 `GET /api/v1/account` 取得 current account profile。
+  - `GetAccountApiKey` service：呼叫 `GET /api/v1/accounts/:username`，解析 API 回傳的 read-only `auth_token`。
+  - Account profile view 會透過 explicit `api_key` local 顯示 read-only API key。
   - `SecureSession`：保存 encrypted session values。
   - Forms：login、registration、profile、password、settings、attachment upload。
   - Attachment policy summary UI 已開始接入。
 - 目前尚未有：
-  - Account view 顯示 API key。
   - App-side API key copy/CLI guidance UI。
-  - Session token scope 相容處理。
+  - Session token scope 相容處理 UI；目前部署後舊 token 若被 API 回 `401`，使用者需重新登入。
   - Google OAuth config。
   - Google login route / callback route。
   - OAuth `state` 防 CSRF。
@@ -41,8 +42,9 @@
 
 ## 設計決策草案
 
-- **API key 來源**：API owns token signing；App 只顯示 API 回傳的 limited-scope `api_key`，不自行產生 API token。
-- **API key scope**：初版顯示 read-only scope，例如 `account:read attachments:read` 或 API 決定的 scope string。
+- **API key 來源**：API owns token signing；App 只顯示 API 回傳的 limited-scope API key，不自行產生 API token。
+- **API key scope**：目前 API key scope 是 `*:read`。
+- **Profile/API key separation**：`FindAccount` 保持只讀 `GET /api/v1/account` profile；`GetAccountApiKey` 獨立讀 `GET /api/v1/accounts/:username`，避免 profile service 混入 token issuance。
 - **Session scope compatibility**：若 API 開始要求 token scope，舊 session 裡的 token 可能無 scope。App 可以在部署後清 session，或偵測 API 401 後提示重新登入。
 - **Google OAuth strategy**：App 做完整 browser OAuth flow 和 Google token exchange；API 只驗證 `id_token` 並建立/登入 account。
 - **State token**：App 必須產生並保存 OAuth `state`，callback 時比對，避免 CSRF。
@@ -53,7 +55,7 @@
 ## 實作策略（分階段）
 
 1. **Config and session compatibility**：補 Google config vars、舊 auth token handling strategy。
-2. **Account API key display**：讀 API 回傳的 `api_key` / `api_key_scope`，在 account view 顯示與 CLI example。
+2. **Account API key display**：已完成。讀 API 回傳的 `data.attributes.auth_token`，在 account view 顯示 read-only key。
 3. **OAuth state service**：建立 state token 產生/驗證 helper。
 4. **Google OAuth start route**：新增 `GET /auth/sso/google`，redirect 到 Google authorization endpoint。
 5. **Google OAuth callback route**：新增 callback route，驗證 state，交換 code 取得 `id_token`。
@@ -88,20 +90,26 @@
      - `CurrentSession` 加 token version/scope presence check（若可解析）。
    - 文件明確提醒部署時可能需要 wipe sessions。
 
-3. `account-api-key-model-and-view`
-   - 更新 `FindAccount` / account parser，讀 API 回傳：
+3. `account-api-key-service-and-view` - done
+   - 保留 `FindAccount` 呼叫 `GET /api/v1/account`。
+   - 新增 `GetAccountApiKey`，讀 API 回傳：
 
      ```json
      {
-       "api_key": "...",
-       "api_key_scope": "account:read attachments:read"
+       "data": {
+         "type": "authorized_account",
+         "attributes": {
+           "account": {},
+           "auth_token": "read-only-api-key"
+         }
+       }
      }
      ```
 
-   - 更新 account view 顯示 API key、scope、CLI example。
+   - 更新 account view 顯示 API key。
    - API key 欄位應避免被不小心放入 edit form payload。
-   - UI 可先使用 readonly input 或 masked display + copy button。
-   - Tests：profile page 顯示 scope 和 command example。
+   - UI 目前使用 readonly textarea；copy button / CLI guidance 可交給後續 UI commit。
+   - Tests：service parse API key；profile page 顯示 key。
 
 4. `oauth-state-helper`
    - 新增 helper/service 產生 random `state`。
@@ -202,6 +210,7 @@ GET /account/:username
 ```
 
 Displays current account details and limited API key returned by API.
+Controller fetches profile and API key through separate services.
 
 ### Google SSO start
 
@@ -225,19 +234,46 @@ Completes OAuth token exchange, sends `id_token` + JWKS to API, and logs the use
 
 ## API Contract 草案（App 使用）
 
-### Current account includes API key
+### Current account profile
 
 ```text
 GET /api/v1/account
 Authorization: Bearer <session-token>
 ```
 
-Expected account attributes may include:
+Expected account profile response:
 
 ```json
 {
-  "api_key": "limited-scope-token",
-  "api_key_scope": "account:read attachments:read"
+  "data": {
+    "type": "account",
+    "attributes": {
+      "id": "account-uuid",
+      "username": "ada-lovelace",
+      "email": "ada@example.com"
+    }
+  }
+}
+```
+
+### Account API key
+
+```text
+GET /api/v1/accounts/:username
+Authorization: Bearer <session-token>
+```
+
+Expected API key response:
+
+```json
+{
+  "data": {
+    "type": "authorized_account",
+    "attributes": {
+      "account": {},
+      "auth_token": "read-only-api-key"
+    }
+  }
 }
 ```
 
@@ -279,7 +315,7 @@ Success response shape matches password login:
 ## 依賴順序
 
 - API `AuthToken` scope payload -> App old-session strategy。
-- API current account API key response -> App account API key display。
+- API `GET /api/v1/accounts/:username` AuthorizedAccount response -> App account API key display。
 - `config-google-oauth` -> `google-sso-start-route` / `google-token-exchange-service`。
 - `oauth-state-helper` -> `google-sso-start-route` -> `google-sso-callback-route`。
 - `google-token-exchange-service` + `google-jwks-service` + API `POST /auth/sso` -> `authenticate-sso-service`。
@@ -289,8 +325,8 @@ Success response shape matches password login:
 
 - API key 是否直接顯示完整 token，或用 masked display + copy button。
 - API key 是否每次頁面刷新都變，或 API 持久化並可 revoke/rotate。
-- Limited API key scope 字串最終用 `account:read attachments:read`、`*:read`，或其他課程格式。
-- 舊 session 無 scope token 的處理方式：強制 logout、Redis wipe、或 API fallback。
+- Limited API key scope 目前由 API 決定為 `*:read`。
+- 舊 session 無 scope token 目前由 API 視為 invalid；部署時可強制 logout、Redis wipe，或在 App 看到 `401` 後要求重新登入。
 - Google redirect URI 在 development/production 的正式值。
 - SSO login button 放在 login modal、register page，或 public home。
 - Google JWKS 由 App fetch 後送 API，或 API 自行 fetch/cache。
@@ -298,9 +334,9 @@ Success response shape matches password login:
 
 ## 本週完成定義
 
-- Account information view 顯示 limited-scope API key 與 scope。
-- 使用者可以複製 API key，並用 CLI 呼叫 limited-scope API route。
-- App 能處理舊無 scope token 的 session 相容問題或清楚要求重新登入。
+- Account information view 顯示 limited-scope API key。
+- 使用者可以手動複製 API key，並用 CLI 呼叫 limited-scope API route；copy button / CLI helper text 可後續做。
+- App docs 記錄舊無 scope token 需重新登入；更完整的 automatic logout UX 可後續做。
 - App 有 Google SSO start/callback routes。
 - App 使用 HTTP requests 完成 Google authorization code exchange，不使用 Google packaged gems。
 - App 取得 Google `id_token` 與 JWKS，送 API `POST /api/v1/auth/sso`。

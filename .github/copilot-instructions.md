@@ -45,6 +45,11 @@ form handling, and Slim view rendering.
   values in session data.
 - Use `ApiClient` with `auth_token:` for authorized API calls. It sends
   `Authorization: Bearer <TOKEN>` via `HTTP.auth`.
+- Login/session tokens returned by the API are full-scope (`*:write`). The App
+  displays separate read-only account API keys (`*:read`) returned by the API;
+  do not treat the session token as a shareable API key.
+- If the API returns `401` for an existing session after scoped token changes,
+  clear the session and require the user to log in again.
 - API authorization is the security boundary. App-side role checks are for
   navigation, button visibility, and user flow only.
 - Services should focus on API payload shaping, API calls, API response parsing,
@@ -125,6 +130,8 @@ Other API-facing services call:
   email.
 - `POST /api/v1/accounts` for registration.
 - `GET /api/v1/account` for current account profile data.
+- `GET /api/v1/accounts/:username` for the read-only API key displayed on the
+  account overview page.
 - `PUT /api/v1/account` for current account profile updates.
 - `PUT /api/v1/account/password` for current account password changes.
 - `GET /api/v1/attachments` for current account document history.
@@ -140,6 +147,12 @@ Current-user calls should prefer token-scoped API paths and should not put the
 requesting user's id or username in the API path/query/body. Target id/username
 is acceptable for admin actions.
 
+The account overview intentionally uses two services:
+
+- `FindAccount` calls `GET /api/v1/account` and returns profile attributes.
+- `GetAccountApiKey` calls `GET /api/v1/accounts/:username` and returns only
+  the read-only API key. Controllers pass this to Slim as `api_key`.
+
 `GET /api/v1/attachments` returns attachment resource envelopes with policy
 summaries. `ListAttachments` converts each entry into an `Attachment` app model;
 views should use model predicates such as `can_delete?` to decide whether to
@@ -154,6 +167,7 @@ This branch has the authenticated-session Web App foundation in place:
 - login/logout flow
 - basic registration flow
 - profile update flow
+- read-only account API key display
 - change password flow
 - admin settings flow
 - admin account delete flow

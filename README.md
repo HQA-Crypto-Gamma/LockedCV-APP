@@ -79,6 +79,7 @@ The App currently includes:
 - API-issued auth token stored in secure session
 - Redis-backed production session storage
 - account overview page
+- read-only account API key display on the account overview page
 - account profile edit/update flow
 - change password page that logs the user out after a successful update
 - document history loaded from the API
@@ -120,6 +121,11 @@ Authenticated API calls now send `Authorization: Bearer <TOKEN>` using the
 token returned by the API login response. The App uses token-scoped API paths
 for current-account profile, password, and attachment-list calls, so it does not
 send the requesting user's account id in those requests.
+API login/session tokens are full-scope (`*:write`). The account overview page
+also fetches a read-only API key (`*:read`) from
+`GET /api/v1/accounts/:username` and displays it for command-line/deputy use.
+If an old session token was issued before scoped tokens existed, the API treats
+it as invalid and the user should log in again.
 
 Email verification registration is implemented in the App. The App encrypts
 `email` and `username` into a `RegistrationToken`, builds
@@ -145,6 +151,8 @@ policy checks are only a user-flow aid; the API still enforces authorization.
 Current protected API calls:
 
 - `GET /api/v1/account`
+- `GET /api/v1/accounts/:username` to fetch a read-only account API key for the
+  profile page
 - `PUT /api/v1/account`
 - `PUT /api/v1/account/password`
 - `GET /api/v1/attachments`
@@ -159,6 +167,10 @@ Current protected API calls:
 
 Current-user API calls use token-scoped paths. Admin actions still include a
 target account id or username because they operate on another account.
+The profile page keeps profile data and API-key retrieval separate:
+`FindAccount` calls `GET /api/v1/account`, while `GetAccountApiKey` calls
+`GET /api/v1/accounts/:username` and passes the returned key to the Slim view as
+an explicit `api_key` local.
 
 ## Checks
 
