@@ -15,7 +15,7 @@
   7. API 驗證後回傳 LockedCV account 與 full-scope auth token，App 建立 session。
 - 不使用 Google packaged gems；只用 `http` 與 `jwt` gems / standard library。
 
-## 現況分析（更新：2026-06-01）
+## 現況分析（更新：2026-06-02）
 
 - 專案：`LockedCV-APP`
 - 目前已有：
@@ -29,9 +29,6 @@
   - `SecureSession`：保存 encrypted session values。
   - Forms：login、registration、profile、password、settings、attachment upload。
   - Attachment policy summary UI 已開始接入。
-- 目前尚未有：
-  - App-side API key copy/CLI guidance UI。
-  - Session token scope 相容處理 UI；目前部署後舊 token 若被 API 回 `401`，使用者需重新登入。
   - Google OAuth config。
   - Google login route / callback route。
   - OAuth `state` 防 CSRF。
@@ -39,6 +36,10 @@
   - Google JWKS fetch service。
   - SSO API service：POST `/auth/sso`。
   - SSO login specs。
+- 目前尚未有：
+  - App-side API key copy/CLI guidance UI。
+  - Session token scope 相容處理 UI；目前部署後舊 token 若被 API 回 `401`，使用者需重新登入。
+  - SSO username edit UI/UX；自動產生 username 的修改流程可後續交由 account profile/settings 處理。
 
 ## 設計決策草案
 
@@ -54,27 +55,26 @@
 
 ## 實作策略（分階段）
 
-1. **Config and session compatibility**：補 Google config vars、舊 auth token handling strategy。
+1. **Config and session compatibility**：已完成 Google config vars；舊 auth token 若被 API 回 `401`，使用者需重新登入。
 2. **Account API key display**：已完成。讀 API 回傳的 `data.attributes.auth_token`，在 account view 顯示 read-only key。
-3. **OAuth state service**：建立 state token 產生/驗證 helper。
-4. **Google OAuth start route**：新增 `GET /auth/sso/google`，redirect 到 Google authorization endpoint。
-5. **Google OAuth callback route**：新增 callback route，驗證 state，交換 code 取得 `id_token`。
-6. **Google JWKS fetch**：GET Google JWKS endpoint。
-7. **SSO API service**：把 `id_token` 與 JWKS POST 到 LockedCV-API。
-8. **Session login**：API SSO 成功後重用 `Account` / `CurrentSession` 建立登入狀態。
-9. **Tests and docs**：WebMock Google endpoints 與 API SSO endpoint，更新 README/copilot/local。
+3. **OAuth state service**：已完成；使用 session `sso_state` 產生/驗證 state。
+4. **Google OAuth start route**：已完成 `GET /auth/sso/google`，redirect 到 Google authorization endpoint。
+5. **Google OAuth callback route**：已完成 callback route，驗證 state，交換 code 取得 `id_token`。
+6. **Google JWKS fetch**：已完成；`AuthenticateGoogleSso` GET Google JWKS endpoint。
+7. **SSO API service**：已完成；把 `id_token` 與 JWKS POST 到 LockedCV-API。
+8. **Session login**：已完成；API SSO 成功後重用 `Account` / `CurrentSession` 建立登入狀態。
+9. **Tests and docs**：WebMock Google endpoints 與 API SSO endpoint，README/copilot/local 已更新。
 
 ## Todo 清單
 
-1. `config-google-oauth`
+1. `config-google-oauth` - done
    - 更新 `config/secrets.example.yml` 與 docs，加入：
      - `GOOGLE_CLIENT_ID`
      - `GOOGLE_CLIENT_SECRET`
-     - `GOOGLE_REDIRECT_URI`
      - `GOOGLE_AUTH_URL`
      - `GOOGLE_TOKEN_URL`
      - `GOOGLE_JWKS_URL`
-   - `GOOGLE_REDIRECT_URI` development 可為：
+   - Redirect URI 由 `APP_URL` 組成；development callback 為：
 
      ```text
      http://localhost:9292/auth/sso/google/callback
@@ -111,13 +111,13 @@
    - UI 目前使用 readonly textarea；copy button / CLI guidance 可交給後續 UI commit。
    - Tests：service parse API key；profile page 顯示 key。
 
-4. `oauth-state-helper`
-   - 新增 helper/service 產生 random `state`。
+4. `oauth-state-helper` - done
+   - route 產生 random `state`。
    - 存到 secure session。
    - Callback 時驗證 state 並消耗。
    - Specs：valid state、missing state、mismatch state。
 
-5. `google-sso-start-route`
+5. `google-sso-start-route` - done
    - 新增 `GET /auth/sso/google`。
    - Redirect 到 Google authorization URL，query 包含：
      - `client_id`
@@ -128,8 +128,8 @@
    - 不需要登入即可使用。
    - Tests：redirect URL 包含必要 query。
 
-6. `google-token-exchange-service`
-   - 新增 service，例如 `ExchangeGoogleAuthCode`。
+6. `google-token-exchange-service` - done
+   - 新增 `ExchangeGoogleAuthCode`。
    - POST 到 Google token endpoint。
    - Request 包含：
      - `client_id`
@@ -141,15 +141,15 @@
    - 不保存 Google access token。
    - WebMock specs：success、Google error、missing id_token、network error。
 
-7. `google-jwks-service`
-   - 新增 service，例如 `FetchGoogleJwks`。
+7. `google-jwks-service` - done
+   - `AuthenticateGoogleSso` GET Google JWKS URL。
    - GET Google JWKS URL。
    - Parse JSON，回傳 JWKS hash 給 SSO API service。
    - 可先不做 caching；若 API 改成自己 fetch/cache，這個 service 可移除。
    - WebMock specs：success、invalid JSON、network error。
 
-8. `authenticate-sso-service`
-   - 新增 App service，例如 `AuthenticateSsoAccount`。
+8. `authenticate-sso-service` - done
+   - 新增 `AuthenticateGoogleSso`。
    - POST 到 API：
 
      ```text
@@ -172,7 +172,7 @@
      - API 5xx/network -> service unavailable。
    - Specs：success、invalid token、API unavailable。
 
-9. `google-sso-callback-route`
+9. `google-sso-callback-route` - done
    - 新增 `GET /auth/sso/google/callback`。
    - 處理 Google callback params：
      - `code`
@@ -186,13 +186,13 @@
    - 失敗時 flash error，redirect `/` 或 login modal。
    - Specs：happy path、state mismatch、Google error、API rejects id_token。
 
-10. `sso-login-ui`
-    - 在 login modal 或 public home 加 Google SSO button/link。
+10. `sso-login-ui` - done
+    - 在 login modal 加 Google SSO link。
     - Button 連到 `/auth/sso/google`。
     - 不要在 UI 中顯示 OAuth implementation details。
     - 若 Google config missing，development 可隱藏或顯示 disabled 狀態；production 應設定完整 config。
 
-11. `docs-and-handoff`
+11. `docs-and-handoff` - done
     - 更新 README：
       - Google OAuth developer app setup。
       - callback URL。
@@ -327,10 +327,9 @@ Success response shape matches password login:
 - API key 是否每次頁面刷新都變，或 API 持久化並可 revoke/rotate。
 - Limited API key scope 目前由 API 決定為 `*:read`。
 - 舊 session 無 scope token 目前由 API 視為 invalid；部署時可強制 logout、Redis wipe，或在 App 看到 `401` 後要求重新登入。
-- Google redirect URI 在 development/production 的正式值。
-- SSO login button 放在 login modal、register page，或 public home。
-- Google JWKS 由 App fetch 後送 API，或 API 自行 fetch/cache。
-- SSO account username 由 API 產生還是 App 傳入。
+- SSO login button 目前放在 login modal；是否也放 register page 或 public home 可再由 UI/UX 決定。
+- Google JWKS 目前由 App fetch 後送 API；若後續改 API fetch/cache JWKS，再調整 service contract。
+- SSO account username 目前由 API 根據 verified email local-part 產生；是否提供 username edit UI/UX 可後續決策。
 
 ## 本週完成定義
 

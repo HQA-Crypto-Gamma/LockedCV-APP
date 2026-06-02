@@ -75,6 +75,7 @@ The App currently includes:
 - public home page with login modal
 - two-step email verification registration flow
 - login and logout flow
+- Google SSO login flow through `/auth/sso/google`
 - encrypted server-side session values
 - API-issued auth token stored in secure session
 - Redis-backed production session storage
@@ -96,6 +97,8 @@ Current routes:
 
 - `GET /`
 - `POST /auth/login`
+- `GET /auth/sso/google`
+- `GET /auth/sso/google/callback`
 - `GET /auth/register`
 - `POST /auth/register`
 - `GET /auth/register/:registration_token`
@@ -126,6 +129,14 @@ also fetches a read-only API key (`*:read`) from
 `GET /api/v1/accounts/:username` and displays it for command-line/deputy use.
 If an old session token was issued before scoped tokens existed, the API treats
 it as invalid and the user should log in again.
+
+Google SSO is implemented with the App/API split used in class. The App starts
+the OAuth browser flow at `GET /auth/sso/google`, stores and verifies OAuth
+`state`, exchanges the callback `code` for a Google `id_token`, fetches Google
+JWKS, then sends `id_token` and JWKS to API `POST /api/v1/auth/sso`. The API
+verifies the token and returns the same authenticated account/session shape as
+password login. The App stores that returned account/auth token in
+`CurrentSession`; it does not store Google access tokens or `id_token`s.
 
 Email verification registration is implemented in the App. The App encrypts
 `email` and `username` into a `RegistrationToken`, builds
@@ -158,6 +169,7 @@ Current protected API calls:
 - `GET /api/v1/attachments`
 - `POST /api/v1/accounts/registration/check`
 - `POST /api/v1/auth/register`
+- `POST /api/v1/auth/sso`
 - `POST /api/v1/accounts`
 - `POST /api/v1/attachments/upload`
 - `DELETE /api/v1/attachments/:attachment_id`
@@ -171,6 +183,30 @@ The profile page keeps profile data and API-key retrieval separate:
 `FindAccount` calls `GET /api/v1/account`, while `GetAccountApiKey` calls
 `GET /api/v1/accounts/:username` and passes the returned key to the Slim view as
 an explicit `api_key` local.
+
+## Google SSO Configuration
+
+Development `config/secrets.yml` needs:
+
+```yaml
+APP_URL: http://localhost:9292
+API_URL: http://localhost:9000/api/v1
+GOOGLE_CLIENT_ID: <Google OAuth client id>
+GOOGLE_CLIENT_SECRET: <Google OAuth client secret>
+GOOGLE_AUTH_URL: https://accounts.google.com/o/oauth2/v2/auth
+GOOGLE_TOKEN_URL: https://oauth2.googleapis.com/token
+GOOGLE_JWKS_URL: https://www.googleapis.com/oauth2/v3/certs
+```
+
+For Heroku production, `APP_URL` must be the deployed App origin, and Google
+Console must include:
+
+- Authorized JavaScript origin: `https://<app-heroku-domain>`
+- Authorized redirect URI:
+  `https://<app-heroku-domain>/auth/sso/google/callback`
+
+Also confirm the API Heroku app has the same `GOOGLE_CLIENT_ID`, because the
+API validates `id_token` audience against that value.
 
 ## Checks
 

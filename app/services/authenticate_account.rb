@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'authenticated_account_response'
+
 module LockedCV
   # Authenticate credentials against LockedCV-API
   class AuthenticateAccount
@@ -24,17 +26,7 @@ module LockedCV
     private
 
     def account_response_from(response)
-      data = response.fetch('data')
-      attributes = data.fetch('attributes').dup
-      auth_token = attributes.delete('auth_token')
-
-      {
-        account: {
-          'type' => data.fetch('type'),
-          'attributes' => attributes
-        },
-        auth_token:
-      }
+      AuthenticatedAccountResponse.from(response)
     end
 
     def api_error_for(error)
