@@ -16,6 +16,13 @@ describe 'Authentication flow' do
     assert_not_requested(:post, "#{API_URL}/auth/authenticate")
   end
 
+  it 'HAPPY: shows a Google sign-in link' do
+    get '/'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'href="/auth/sso/google"'
+  end
+
   it 'HAPPY: redirects to Google authorization with state' do
     get '/auth/sso/google'
 
@@ -31,17 +38,20 @@ describe 'Authentication flow' do
     _(query['state']).wont_be_empty
   end
 
-  it 'HAPPY: accepts matching Google callback state' do
+  it 'HAPPY: signs in with matching Google callback state' do
     get '/auth/sso/google'
     state = URI.decode_www_form(URI.parse(last_response.location).query).to_h.fetch('state')
     stub_google_token_exchange
+    stub_google_jwks
+    stub_api_sso
+    stub_current_account_attachments
 
     get '/auth/sso/google/callback', state:, code: 'google-code'
 
     _(last_response.status).must_equal 302
     _(last_response.location).must_match %r{/\z}
     follow_redirect!
-    _(last_response.body).must_include 'Google id token received'
+    _(last_response.body).must_include 'Welcome back google-user!'
   end
 
   it 'BAD: rejects mismatched Google callback state' do
@@ -75,17 +85,75 @@ describe 'Authentication flow' do
 
   def stub_google_token_exchange
     WebMock.stub_request(:post, app.config.GOOGLE_TOKEN_URL)
-           .with do |request|
-             form = URI.decode_www_form(request.body).to_h
-             form['client_id'] == 'test-google-client-id' &&
-               form['client_secret'] == 'test-google-client-secret' &&
-               form['code'] == 'google-code' &&
-               form['grant_type'] == 'authorization_code' &&
-               form['redirect_uri'] == "#{app.config.APP_URL}/auth/sso/google/callback"
-           end
+           .with { |request| google_token_request_valid?(request) }
            .to_return(
              status: 200,
              body: { id_token: 'google-id-token' }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def google_token_request_valid?(request)
+    form = URI.decode_www_form(request.body).to_h
+    form['client_id'] == 'test-google-client-id' &&
+      form['client_secret'] == 'test-google-client-secret' &&
+      form['code'] == 'google-code' &&
+      form['grant_type'] == 'authorization_code' &&
+      form['redirect_uri'] == "#{app.config.APP_URL}/auth/sso/google/callback"
+  end
+
+  def stub_google_jwks
+    WebMock.stub_request(:get, app.config.GOOGLE_JWKS_URL)
+           .to_return(
+             status: 200,
+             body: { keys: [{ kid: 'google-key' }] }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_api_sso
+    WebMock.stub_request(:post, "#{API_URL}/auth/sso")
+           .with(body: api_sso_request.to_json)
+           .to_return(
+             status: 200,
+             body: api_sso_response.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def api_sso_request
+    {
+      provider: 'google',
+      id_token: 'google-id-token',
+      jwks: { keys: [{ kid: 'google-key' }] }
+    }
+  end
+
+  def api_sso_response
+    {
+      data: {
+        type: 'authenticated_account',
+        attributes: api_sso_account_attributes
+      }
+    }
+  end
+
+  def api_sso_account_attributes
+    {
+      id: 'account-id',
+      username: 'google-user',
+      email: 'google-user@example.com',
+      roles: ['member'],
+      auth_token: 'session-token'
+    }
+  end
+
+  def stub_current_account_attachments
+    WebMock.stub_request(:get, "#{API_URL}/attachments")
+           .with(headers: { 'Authorization' => 'Bearer session-token' })
+           .to_return(
+             status: 200,
+             body: { data: [] }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end
