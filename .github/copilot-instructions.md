@@ -63,6 +63,12 @@ form handling, and Slim view rendering.
 
 - `GET /` renders the public home page or the logged-in CV vault.
 - `POST /auth/login` authenticates against `LockedCV-API`.
+- `GET /auth/sso/google` starts Google OAuth by redirecting with a session
+  `state`.
+- `GET /auth/sso/google/callback` verifies state, exchanges the authorization
+  code for a Google `id_token`, fetches Google JWKS, sends both to API
+  `POST /api/v1/auth/sso`, and stores the API-authenticated account in
+  `CurrentSession`.
 - `GET /auth/register` renders the registration form.
 - `POST /auth/register` checks availability, creates a registration token, and
   asks `LockedCV-API` to send the verification email.
@@ -128,6 +134,9 @@ Other API-facing services call:
   email.
 - `POST /api/v1/auth/register` to ask the API to send the Mailgun verification
   email.
+- `POST /api/v1/auth/sso` for Google SSO completion. The App sends
+  `provider: "google"`, Google `id_token`, and Google JWKS; the API verifies
+  the token and returns the normal authenticated account response.
 - `POST /api/v1/accounts` for registration.
 - `GET /api/v1/account` for current account profile data.
 - `GET /api/v1/accounts/:username` for the read-only API key displayed on the
@@ -177,6 +186,7 @@ This branch has the authenticated-session Web App foundation in place:
 - attachment upload/delete forwarding to the API
 - email verification registration flow
 - encrypted registration tokens containing email/username
+- Google OAuth start/callback flow and SSO session creation
 - cookie-backed session
 - flash notices/errors
 - role-aware view hooks
