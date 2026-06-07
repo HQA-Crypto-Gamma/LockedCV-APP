@@ -9,7 +9,7 @@ section.scan-hero
     span Detected fields
     strong = scan_result.match_count
 
-section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview"
+section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview" data-pdf-create-url="/attachments/#{scan_result.attachment_id}/masked_attachments"
   .scan-preview-panel
     .scan-panel-heading
       div
@@ -19,34 +19,49 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
     iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" style="width: 100%; min-height: 620px; height: 70vh;" data-pdf-preview-frame=true
 
   aside.scan-fields-panel
-    .scan-panel-heading
-      div
-        p.panel-kicker Review
-        h2 Mask fields
-    ul.scan-mask-label-list
-      - mask_fields.each do |mask_field|
-        - field_matches = scan_result.matches.select { |match| mask_field[:types].include?(match['type'].to_s) }
-        - detected = field_matches.any?
-        li.scan-match-item
-          label.scan-match-control for="mask-label-#{mask_field[:value]}"
-            input id="mask-label-#{mask_field[:value]}" type="checkbox" value=mask_field[:value] checked=detected data-mask-label-checkbox=true
-            span.scan-match-check
-          .scan-match-content
-            .scan-match-title
-              strong = mask_field[:label]
+    .scan-review-step data-mask-review-panel=true
+      .scan-panel-heading
+        div
+          p.panel-kicker Review
+          h2 Mask fields
+      ul.scan-mask-label-list
+        - mask_fields.each do |mask_field|
+          - field_matches = scan_result.matches.select { |match| mask_field[:types].include?(match['type'].to_s) }
+          - detected = field_matches.any?
+          li.scan-match-item
+            label.scan-match-control for="mask-label-#{mask_field[:value]}"
+              input id="mask-label-#{mask_field[:value]}" type="checkbox" value=mask_field[:value] checked=detected data-mask-label-checkbox=true
+              span.scan-match-check
+            .scan-match-content
+              .scan-match-title
+                strong = mask_field[:label]
+                - if detected
+                  span = "#{field_matches.length} detected"
+                - else
+                  span Not detected
               - if detected
-                span = "#{field_matches.length} detected"
+                .scan-mask-field-values
+                  - field_matches.each do |match|
+                    - source = match['source'].to_s
+                    code = match['value'].to_s
+                    - unless source.empty?
+                      small = source.tr('_', ' ')
               - else
-                span Not detected
-            - if detected
-              .scan-mask-field-values
-                - field_matches.each do |match|
-                  - source = match['source'].to_s
-                  code = match['value'].to_s
-                  - unless source.empty?
-                    small = source.tr('_', ' ')
-            - else
-              p.scan-mask-field-empty Not detected in this attachment.
+                p.scan-mask-field-empty Not detected in this attachment.
+      .scan-preview-actions
+        button.button type="button" data-next-mask-step-button=true Next
+        span.scan-preview-action-status data-review-step-status=true Review the preview before saving.
+
+    .scan-confirm-step hidden=true data-mask-confirm-panel=true
+      .scan-panel-heading
+        div
+          p.panel-kicker Confirm
+          h2 Confirm masked PDF
+      p.scan-confirm-copy The PDF preview is ready to save with the selected mask fields.
+      .scan-preview-actions
+        button.button.button--secondary type="button" data-back-mask-step-button=true Back
+        button.button type="button" data-create-pdf-button=true Confirm masked PDF
+        span.scan-preview-action-status data-create-pdf-status=true Not saved
 
 javascript:
   (() => {
@@ -54,8 +69,16 @@ javascript:
     if (!workspace) return;
 
     const previewUrl = workspace.dataset.pdfPreviewUrl;
+    const createUrl = workspace.dataset.pdfCreateUrl;
     const previewFrame = workspace.querySelector('[data-pdf-preview-frame]');
     const status = workspace.querySelector('.status-pill');
+    const reviewPanel = workspace.querySelector('[data-mask-review-panel]');
+    const confirmPanel = workspace.querySelector('[data-mask-confirm-panel]');
+    const nextButton = workspace.querySelector('[data-next-mask-step-button]');
+    const backButton = workspace.querySelector('[data-back-mask-step-button]');
+    const createButton = workspace.querySelector('[data-create-pdf-button]');
+    const createStatus = workspace.querySelector('[data-create-pdf-status]');
+    const reviewStatus = workspace.querySelector('[data-review-step-status]');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
     if (!previewUrl || !previewFrame || checkboxes.length === 0) return;
 
@@ -69,6 +92,36 @@ javascript:
 
     const setStatus = (text) => {
       if (status) status.textContent = text;
+    };
+
+    const setCreateStatus = (text) => {
+      if (createStatus) createStatus.textContent = text;
+    };
+
+    const setReviewStatus = (text) => {
+      if (reviewStatus) reviewStatus.textContent = text;
+    };
+
+    const clearSavedState = () => {
+      delete workspace.dataset.maskedAttachmentId;
+      delete workspace.dataset.maskedAttachmentName;
+      setCreateStatus('Not saved');
+    };
+
+    const showReviewStep = () => {
+      if (reviewPanel) reviewPanel.hidden = false;
+      if (confirmPanel) confirmPanel.hidden = true;
+      setReviewStatus('Review the preview before saving.');
+    };
+
+    const showConfirmStep = () => {
+      if (reviewPanel) reviewPanel.hidden = true;
+      if (confirmPanel) confirmPanel.hidden = false;
+      if (workspace.dataset.maskedAttachmentId) {
+        setCreateStatus(workspace.dataset.maskedAttachmentName ? `Saved ${workspace.dataset.maskedAttachmentName}` : 'Saved');
+      } else {
+        setCreateStatus('Not saved');
+      }
     };
 
     const updatePreview = () => {
@@ -95,10 +148,12 @@ javascript:
           currentPdfUrl = URL.createObjectURL(pdfBlob);
           previewFrame.src = currentPdfUrl;
           setStatus('Ready');
+          setReviewStatus('Review the preview before saving.');
         })
         .catch(() => {
           if (currentRequest !== requestId) return;
           setStatus('Error');
+          setReviewStatus('Preview failed.');
         });
     };
 
@@ -106,8 +161,54 @@ javascript:
       checkbox.addEventListener('change', () => {
         window.clearTimeout(debounceTimer);
         debounceTimer = window.setTimeout(updatePreview, 350);
+        clearSavedState();
+        setReviewStatus('Preview updating.');
       });
     });
+
+    if (nextButton) {
+      nextButton.addEventListener('click', () => {
+        showConfirmStep();
+      });
+    }
+
+    if (backButton) {
+      backButton.addEventListener('click', () => {
+        showReviewStep();
+      });
+    }
+
+    if (createButton && createUrl) {
+      createButton.addEventListener('click', () => {
+        createButton.disabled = true;
+        setCreateStatus('Saving');
+
+        fetch(createUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ selected_labels: selectedLabels() })
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error('Create failed');
+            return response.json();
+          })
+          .then((payload) => {
+            workspace.dataset.maskedAttachmentId = payload.masked_attachment_id || '';
+            workspace.dataset.maskedAttachmentName = payload.attachment_name || '';
+            setCreateStatus(payload.attachment_name ? `Saved ${payload.attachment_name}` : 'Saved');
+          })
+          .catch(() => {
+            setCreateStatus('Error');
+          })
+          .finally(() => {
+            createButton.disabled = false;
+          });
+      });
+    }
 
     window.addEventListener('beforeunload', () => {
       if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);

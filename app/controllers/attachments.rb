@@ -31,6 +31,11 @@ module LockedCV
               preview_masked_pdf(routing, attachment_id)
             end
           end
+
+          # POST /attachments/[attachment_id]/masked_attachments
+          routing.post do
+            create_masked_pdf(routing, attachment_id)
+          end
         end
 
         routing.on 'delete' do
@@ -92,7 +97,7 @@ module LockedCV
       pdf_body = PreviewMaskedPdf.new(App.config).call(
         attachment_id:,
         auth_token: @current_account.auth_token,
-        selected_labels: preview_selected_labels(routing)
+        selected_labels: masked_pdf_selected_labels(routing)
       )
 
       routing.response['Content-Type'] = 'application/pdf'
@@ -109,7 +114,30 @@ module LockedCV
       preview_failed(routing, 'Could not preview masked attachment', 502)
     end
 
-    def preview_selected_labels(routing)
+    def create_masked_pdf(routing, attachment_id)
+      masked_attachment = CreateMaskedPdf.new(App.config).call(
+        attachment_id:,
+        auth_token: @current_account.auth_token,
+        selected_labels: masked_pdf_selected_labels(routing)
+      )
+
+      routing.response['Content-Type'] = 'application/json'
+      {
+        masked_attachment_id: masked_attachment.fetch('id'),
+        attachment_name: masked_attachment.fetch('attachment_name')
+      }.to_json
+    rescue JSON::ParserError, KeyError, PreviewMaskedPdf::ValidationError, CreateMaskedPdf::ValidationError
+      preview_failed(routing, 'Invalid selected labels', 400)
+    rescue CreateMaskedPdf::NotFoundError
+      preview_failed(routing, 'Attachment not found', 404)
+    rescue CreateMaskedPdf::UnauthorizedError
+      preview_failed(routing, 'Please log in again before scanning', 401)
+    rescue CreateMaskedPdf::ServiceUnavailableError => e
+      App.logger.error "MASKED PDF CREATE FAILED: #{e.inspect}"
+      preview_failed(routing, 'Could not create masked attachment', 502)
+    end
+
+    def masked_pdf_selected_labels(routing)
       request_data = JSON.parse(routing.body.read)
       selected_labels = request_data.fetch('selected_labels') { nil }
       raise PreviewMaskedPdf::ValidationError unless selected_labels.nil? || selected_labels.is_a?(Array)
