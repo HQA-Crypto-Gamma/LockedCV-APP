@@ -54,6 +54,9 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
 section.scan-final-actions hidden=true data-mask-confirm-panel=true style="display: none;"
   button.button.button--secondary type="button" data-back-mask-step-button=true Back
   button.button type="button" data-create-pdf-button=true Confirm and save
+  .scan-saved-actions hidden=true data-saved-mask-actions=true style="display: none; flex-direction: column; gap: 10px; align-items: stretch; position: fixed; right: 28px; bottom: 24px; z-index: 20;"
+    button.button.button--secondary type="button" data-share-mask-button=true style="min-width: 132px;" Share
+    button.button type="button" data-download-mask-button=true style="min-width: 132px;" Download
   span.scan-preview-action-status hidden=true data-create-pdf-status=true
 
 javascript:
@@ -74,6 +77,7 @@ javascript:
     const nextButton = workspace.querySelector('[data-next-mask-step-button]');
     const backButton = document.querySelector('[data-back-mask-step-button]');
     const createButton = document.querySelector('[data-create-pdf-button]');
+    const savedActions = document.querySelector('[data-saved-mask-actions]');
     const createStatus = document.querySelector('[data-create-pdf-status]');
     const reviewStatus = workspace.querySelector('[data-review-step-status]');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
@@ -103,6 +107,14 @@ javascript:
       delete workspace.dataset.maskedAttachmentId;
       delete workspace.dataset.maskedAttachmentName;
       setCreateStatus('Not saved');
+      if (createButton) {
+        createButton.hidden = false;
+        createButton.style.display = 'inline-flex';
+      }
+      if (savedActions) {
+        savedActions.hidden = true;
+        savedActions.style.display = 'none';
+      }
     };
 
     const showReviewStep = () => {
@@ -117,6 +129,10 @@ javascript:
       }
       if (backButton) backButton.style.cssText = '';
       if (createButton) createButton.style.cssText = '';
+      if (savedActions) {
+        savedActions.hidden = true;
+        savedActions.style.display = 'none';
+      }
       workspace.style.gridTemplateColumns = 'minmax(0, 2fr) minmax(380px, 0.78fr)';
       workspace.style.width = 'min(calc(100vw - 48px), 1480px)';
       if (pageTitle) pageTitle.textContent = 'Mask Review';
@@ -140,8 +156,15 @@ javascript:
       if (backButton) {
         backButton.style.cssText = 'position: fixed; left: 28px; bottom: 24px; z-index: 20;';
       }
-      if (createButton) {
-        createButton.style.cssText = 'position: fixed; right: 28px; bottom: 24px; z-index: 20;';
+      if (createButton && !workspace.dataset.maskedAttachmentId) {
+        createButton.hidden = false;
+        createButton.style.cssText = 'display: inline-flex; position: fixed; right: 28px; bottom: 24px; z-index: 20;';
+      }
+      if (savedActions && workspace.dataset.maskedAttachmentId) {
+        createButton.hidden = true;
+        createButton.style.display = 'none';
+        savedActions.hidden = false;
+        savedActions.style.display = 'flex';
       }
       if (pageTitle) pageTitle.textContent = 'Confirm Masked PDF';
       if (previewTitle) previewTitle.textContent = 'Final masked PDF';
@@ -175,7 +198,7 @@ javascript:
           if (currentRequest !== requestId) return;
           if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
           currentPdfUrl = URL.createObjectURL(pdfBlob);
-          previewFrame.src = currentPdfUrl;
+          previewFrame.src = `${currentPdfUrl}#toolbar=0&navpanes=0&scrollbar=1`;
           setStatus('Ready');
           setReviewStatus('Review the preview before saving.');
         })
@@ -229,6 +252,13 @@ javascript:
             workspace.dataset.maskedAttachmentId = payload.masked_attachment_id || '';
             workspace.dataset.maskedAttachmentName = payload.attachment_name || '';
             setCreateStatus(payload.attachment_name ? `Saved ${payload.attachment_name}` : 'Saved');
+            createButton.hidden = true;
+            createButton.style.display = 'none';
+            if (savedActions) {
+              savedActions.hidden = false;
+              savedActions.style.display = 'flex';
+            }
+            setStatus('Saved');
           })
           .catch(() => {
             setCreateStatus('Error');
