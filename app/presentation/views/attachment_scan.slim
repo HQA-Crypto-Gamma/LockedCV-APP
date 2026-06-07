@@ -1,7 +1,7 @@
 - field_labels = { 'first_name' => 'First name', 'last_name' => 'Last name', 'email' => 'Email', 'phone_number' => 'Phone number', 'birthday' => 'Birthday', 'address' => 'Address', 'identification_number' => 'ID number', 'identification_numbers' => 'ID numbers' }
 - mask_fields = [{ label: 'Name', value: 'name', types: %w[first_name last_name full_name name] }, { label: 'Email', value: 'email', types: %w[email] }, { label: 'Phone', value: 'tel', types: %w[phone phone_number tel] }, { label: 'ID Number', value: 'id', types: %w[identification_number identification_numbers id id_number] }, { label: 'Birthday', value: 'birthday', types: %w[birthday] }, { label: 'Address', value: 'address', types: %w[address] }]
 
-section.scan-hero
+section.scan-hero style="width: min(calc(100vw - 48px), 1480px); margin-left: 50%; transform: translateX(-50%);"
   div
     p.eyebrow Scan preview
     h1 Mask Review
@@ -9,22 +9,22 @@ section.scan-hero
     span Detected fields
     strong = scan_result.match_count
 
-section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview" data-pdf-create-url="/attachments/#{scan_result.attachment_id}/masked_attachments"
-  .scan-preview-panel
+section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview" data-pdf-create-url="/attachments/#{scan_result.attachment_id}/masked_attachments" style="width: min(calc(100vw - 48px), 1480px); margin-left: 50%; transform: translateX(-50%); --scan-panel-height: clamp(720px, calc(100vh - 130px), 920px); grid-template-columns: minmax(0, 2fr) minmax(380px, 0.78fr); align-items: stretch;"
+  .scan-preview-panel style="height: var(--scan-panel-height);"
     .scan-panel-heading
       div
         p.panel-kicker Preview
         h2 Masked PDF
       span.status-pill.status-pill--masked Ready
-    iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" style="width: 100%; min-height: 620px; height: 70vh;" data-pdf-preview-frame=true
+    iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" style="width: 100%; height: calc(var(--scan-panel-height) - 92px); min-height: 0;" data-pdf-preview-frame=true
 
-  aside.scan-fields-panel
-    .scan-review-step data-mask-review-panel=true
+  aside.scan-fields-panel style="height: var(--scan-panel-height); display: flex; flex-direction: column; min-height: 0;"
+    .scan-review-step data-mask-review-panel=true style="display: flex; flex: 1; flex-direction: column; min-height: 0;"
       .scan-panel-heading
         div
           p.panel-kicker Review
           h2 Mask fields
-      ul.scan-mask-label-list
+      ul.scan-mask-label-list style="flex: 1; min-height: 0; overflow: auto; padding-right: 6px;"
         - mask_fields.each do |mask_field|
           - field_matches = scan_result.matches.select { |match| mask_field[:types].include?(match['type'].to_s) }
           - detected = field_matches.any?
@@ -48,11 +48,10 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
                       small = source.tr('_', ' ')
               - else
                 p.scan-mask-field-empty Not detected in this attachment.
-      .scan-preview-actions
+      .scan-preview-actions style="display: flex; flex: 0 0 auto; justify-content: flex-end; width: 100%; margin-top: auto; padding-top: 14px; border-top: 1px solid #d9e0e5;"
         button.button type="button" data-next-mask-step-button=true Next
-        span.scan-preview-action-status data-review-step-status=true Review the preview before saving.
 
-    .scan-confirm-step hidden=true data-mask-confirm-panel=true
+    .scan-confirm-step hidden=true data-mask-confirm-panel=true style="flex: 1; flex-direction: column; min-height: 0;"
       .scan-panel-heading
         div
           p.panel-kicker Confirm
