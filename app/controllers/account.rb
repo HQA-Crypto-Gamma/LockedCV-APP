@@ -37,14 +37,18 @@ module LockedCV
     def render_profile(routing, username, editing: false)
       ensure_own_profile!(routing, username)
 
-      view :account, locals: { account: current_account_profile, editing: }
+      view :account, locals: {
+        account: current_account_profile,
+        api_key: current_account_api_key,
+        editing:
+      }
     rescue FindAccount::NotFoundError
       flash[:error] = 'Account not found'
       routing.redirect '/'
     rescue FindAccount::ServiceUnavailableError => e
       App.logger.error "ACCOUNT FETCH UNAVAILABLE: #{e.inspect}"
       flash.now[:error] = 'Profile is temporarily unavailable'
-      view :account, locals: { account: current_account_attributes, editing: false }
+      view :account, locals: { account: current_account_attributes, api_key: nil, editing: false }
     end
 
     def update_profile(routing, username)
@@ -109,7 +113,7 @@ module LockedCV
     def profile_update_failed(routing, message, status)
       flash.now[:error] = message
       response.status = status
-      view :account, locals: { account: profile_form_data(routing), editing: true }
+      view :account, locals: { account: profile_form_data(routing), api_key: nil, editing: true }
     end
 
     def password_update_failed(message, status)
@@ -121,7 +125,7 @@ module LockedCV
     def change_current_password(routing)
       form_data = validate_form(Form::ChangePassword, routing.params)
       ChangePassword.new(App.config, current_account: @current_account).call(
-        password_data: form_data.slice(:current_password, :password, :password_confirmation)
+        password_data: form_data.slice(:current_password, :password)
       )
     end
 
@@ -148,6 +152,13 @@ module LockedCV
     def current_account_profile
       profile = FindAccount.new(App.config, current_account: @current_account).call
       profile.merge('roles' => @current_account.roles)
+    end
+
+    def current_account_api_key
+      GetAccountApiKey.new(App.config, current_account: @current_account).call
+    rescue GetAccountApiKey::NotFoundError, GetAccountApiKey::ServiceUnavailableError => e
+      App.logger.error "ACCOUNT API KEY UNAVAILABLE: #{e.inspect}"
+      nil
     end
 
     def current_account_attributes

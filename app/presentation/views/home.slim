@@ -69,7 +69,10 @@
                   span.file-badge = extension
                   div
                     strong = attachment_name
-                    span Original retained privately
+                    - if attachment.viewer_masked?
+                      span Masked shared copy
+                    - else
+                      span Original retained privately
               td = '-'
               td
                 span.status-pill.status-pill--saved Saved
@@ -141,3 +144,4 @@
         input#modal-password type="password" name="password" autocomplete="current-password"
 
         button type="submit" Log in
+      a.button.button--secondary href="/auth/sso/google" Sign in with Google

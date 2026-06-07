@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module LockedCV
-  # Updates an account password through LockedCV-API.
-  class ChangePassword
-    class ValidationError < StandardError; end
+  # Fetches a read-only API key for the current account.
+  class GetAccountApiKey
+    class NotFoundError < StandardError; end
     class ServiceUnavailableError < StandardError; end
 
     def initialize(config, current_account:)
@@ -11,12 +11,12 @@ module LockedCV
       @current_account = current_account
     end
 
-    def call(password_data:)
-      @client.put(
-        '/account/password',
-        password_payload(password_data),
+    def call(username: @current_account.username)
+      response = @client.get(
+        "/accounts/#{username}",
         auth_token: @current_account.auth_token
       )
+      response.fetch('data').fetch('attributes').fetch('auth_token')
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
     rescue HTTP::Error, JSON::ParserError, KeyError => e
@@ -25,21 +25,14 @@ module LockedCV
 
     private
 
-    def password_payload(password_data)
-      {
-        current_password: password_data[:current_password],
-        password: password_data[:password]
-      }
-    end
-
     def api_error_for(error)
-      return ValidationError.new(error.message) if error.status == 400
+      return NotFoundError.new(error.message) if error.status == 404
 
       unavailable_error_for(error)
     end
 
     def unavailable_error_for(error)
-      ServiceUnavailableError.new("Password update API unavailable: #{ApiClient.error_details(error)}")
+      ServiceUnavailableError.new("Account API key unavailable: #{ApiClient.error_details(error)}")
     end
   end
 end

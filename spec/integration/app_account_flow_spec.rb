@@ -67,6 +67,19 @@ describe 'Account flow' do
     assert_not_requested(:put, "#{API_URL}/account/password")
   end
 
+  it 'HAPPY: shows the read-only API key on the profile page' do
+    stub_login
+    stub_profile
+    stub_account_detail
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    get '/account/ada-lovelace'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'Read-only API key'
+    _(last_response.body).must_include 'read-only-api-key'
+  end
+
   private
 
   def stub_login
@@ -74,6 +87,44 @@ describe 'Account flow' do
            .to_return(
              status: 200,
              body: { data: { type: 'authenticated_account', attributes: @account } }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_profile
+    WebMock.stub_request(:get, "#{API_URL}/account")
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
+           .to_return(
+             status: 200,
+             body: {
+               data: {
+                 type: 'account',
+                 attributes: @account.except('auth_token')
+               }
+             }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_account_detail
+    WebMock.stub_request(:get, "#{API_URL}/accounts/ada-lovelace")
+           .with(headers: { 'Authorization' => 'Bearer auth-token' })
+           .to_return(
+             status: 200,
+             body: {
+               data: {
+                 type: 'authorized_account',
+                 attributes: {
+                   account: {
+                     data: {
+                       type: 'account',
+                       attributes: @account.except('auth_token')
+                     }
+                   },
+                   auth_token: 'read-only-api-key'
+                 }
+               }
+             }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end

@@ -18,6 +18,26 @@ module LockedCV
       attributes['attachment_name']
     end
 
+    def role
+      policy['role']
+    end
+
+    def owner?
+      role == 'owner'
+    end
+
+    def viewer_masked?
+      role == 'viewer_masked'
+    end
+
+    def can_view?
+      policy['can_view'] == true
+    end
+
+    def can_view_masked?
+      policy['can_view_masked'] == true
+    end
+
     def can_delete?
       policy['can_delete'] == true
     end

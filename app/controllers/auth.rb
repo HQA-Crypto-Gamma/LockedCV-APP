@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'roda'
+require 'securerandom'
 require_relative 'app'
 
 module LockedCV
@@ -34,6 +35,45 @@ module LockedCV
           App.logger.error "AUTHENTICATION SERVICE UNAVAILABLE: #{e.inspect}"
           flash[:error] = 'Authentication service is temporarily unavailable'
           routing.redirect '/'
+        end
+      end
+
+      routing.on 'sso', 'google' do
+        routing.is do
+          # GET /auth/sso/google
+          routing.get do
+            state = session['sso_state'] = SecureRandom.hex(16)
+            routing.redirect GoogleSsoConfig.new(App.config).authorization_url(state)
+          end
+        end
+
+        routing.is 'callback' do
+          # GET /auth/sso/google/callback
+          routing.get do
+            verify_sso_state!(routing)
+            id_token = ExchangeGoogleAuthCode.new(App.config).call(routing.params['code'])
+            authenticated = AuthenticateGoogleSso.new(App.config).call(id_token:)
+            account = Account.new(authenticated[:account], authenticated[:auth_token])
+
+            @current_session.current_account = account
+            flash[:notice] = "Welcome back #{account.username}!"
+            routing.redirect '/'
+          rescue SsoStateError
+            flash[:error] = 'Sign-in session expired or could not be verified'
+            routing.redirect '/'
+          rescue ExchangeGoogleAuthCode::TokenExchangeError => e
+            App.logger.error "GOOGLE TOKEN EXCHANGE ERROR: #{e.inspect}"
+            flash[:error] = 'Could not sign in with Google'
+            routing.redirect '/'
+          rescue AuthenticateGoogleSso::UnauthorizedError => e
+            App.logger.warn "GOOGLE SSO REJECTED: #{e.inspect}"
+            flash[:error] = 'Could not sign in with Google'
+            routing.redirect '/'
+          rescue AuthenticateGoogleSso::ServiceUnavailableError => e
+            App.logger.error "GOOGLE SSO SERVICE UNAVAILABLE: #{e.inspect}"
+            flash[:error] = 'Google sign-in is temporarily unavailable'
+            routing.redirect '/'
+          end
         end
       end
 
@@ -127,6 +167,15 @@ module LockedCV
     # rubocop:enable Metrics/BlockLength
 
     private
+
+    class SsoStateError < StandardError; end
+
+    def verify_sso_state!(routing)
+      expected_state = session.delete('sso_state')
+      return if expected_state && routing.params['state'] == expected_state
+
+      raise SsoStateError
+    end
 
     def login_account(routing)
       authenticated = AuthenticateAccount.new(App.config).call(**credentials_from(routing.params))

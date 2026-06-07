@@ -11,7 +11,7 @@
 - App models 不做重要 domain decision；重要邏輯仍屬於 API models/policies。
 - App 應使用 API 回傳的 policy summaries/capabilities 來決定是否顯示 links/buttons/resources，不在 App 自己推論 authorization。
 
-## 現況分析（2026-05-26）
+## 現況分析（2026-05-31）
 
 - 專案：`LockedCV-APP`
 - 目前已有：
@@ -22,24 +22,26 @@
   - `dry-validation` dependency。
   - `app/forms/` 與 shared `Form` helpers。
   - Auth/registration/account/settings/attachment upload form contracts。
-  - Controllers 已開始在打 API 前用 form objects 驗證 login、registration、profile update、password update、settings role assignment、attachment upload。
+  - Controllers 已在打 API 前用 form objects 驗證 login、registration、profile update、password update、settings role assignment、attachment upload。
   - Validation failure specs 確認 invalid input 不會打 API。
+  - `ChangePassword` 和 `UpdateAccount` services 已移除重複的 form-shape validation，改由 controller/form 負責；services 保留 API 400/error mapping。
+  - `Attachment` app model 已解析 API attachment envelope 與 policy summary，並提供 `can_delete?`。
+  - Home view 已根據 `attachment.can_delete?` 顯示/隱藏 delete action。
 - 目前尚未有：
-  - API response parser models for attachment/account lists/policy summaries。
   - 統一 field-level form error rendering convention；目前多數 route 先使用 flash 或頁面訊息。
-  - UI 使用 API policy summaries/capabilities 的 pattern。
-  - API policy summary 尚未正式接入 APP models/views。
+  - Account list/capability parser models。
+  - 完整 policy summary UI pattern；目前 attachment delete action 已接入，其他 policy 欄位仍待補。
 
 ## API Policy Integration Notes
 
-- API `plan.policies.md` 會讓 resource responses 回傳 `policies`，current account response 回傳 `capabilities`。
+- API `plan.policies.md` 會讓 resource responses 回傳 `policy`/`policies`，current account response 回傳 `capabilities`。
 - App 不自行推論 authorization，只根據 API 回傳的 summary 控制 UI 顯示；API 仍是安全邊界。
 - Attachment 權限語意暫定：
   - `can_view`：可看原始 PDF / raw sensitive data。
   - `can_view_masked`：可看遮罩版 PDF / masked output。
   - `can_delete`：可刪除該 attachment。
   - `can_upload` 或 account capability：可上傳新的 attachment。
-- APP model parsing 需要把 `policies` 包成 readable object，例如 `attachment.policies.can_view_masked`，views 不直接讀 raw API hash。
+- APP model parsing 需要把 policy summary 包成 readable interface。現況：`Attachment#can_delete?` 已接上；後續可補 `can_view?`、`can_view_masked?`、`role` 等 predicates，views 不直接讀 raw API hash。
 
 ## 參考方向
 
@@ -53,7 +55,7 @@
   - 每個 form contract 使用 `Dry::Validation.Contract`。
   - Form helper 回傳 `validation_errors` 與 sanitized `message_values`。
   - API parser model 使用 `.from_api(envelope)` factory，集中處理 API envelopes 與 policies。
-  - 可用 `OpenStruct` 包裝 policy summary，讓 views 使用 `attachment.policies.can_delete` 這類 readable interface。
+  - 可用 model predicate 或 `OpenStruct` 包裝 policy summary，讓 views 使用 `attachment.can_delete?` 或 `attachment.policies.can_delete` 這類 readable interface。
 
 ## 實作策略（分階段）
 
@@ -112,7 +114,7 @@
      - `email` required。
      - `phone_number` optional/required 依目前 UI。
      - `first_name`、`last_name`、`address`、`identification_numbers` optional。
-     - `birthday` 使用 `YYYY-MM-DD` validation，取代或包裝現有 `BirthdayValidator`。
+     - `birthday` 使用 `YYYY-MM-DD` validation；`UpdateAccount` 已改由 form 負責，`RegisterAccount` 仍暫留既有 `BirthdayValidator` 防線。
    - `ChangePassword`：
      - `current_password` required。
      - `password` required。
@@ -159,28 +161,28 @@
    - 建立或補強 App-side parser models：
      - `Account`
      - `AccountList`
-     - `Attachment`
+     - ✅ `Attachment`
      - `AttachmentList`
      - `PolicySummary` 或使用 `OpenStruct` 包裝 policies。
-   - Services 回傳 App model objects，不直接回 raw API hash。
-   - Controllers/views 不再知道 API envelope 細節，例如 `data -> attributes`。
+   - ✅ `ListAttachments` 回傳 `Attachment` App model objects，不直接回 raw API hash。
+   - Controllers/views 不再知道 API envelope 細節，例如 `data -> attributes`。目前 attachment list 已完成，account/settings 仍待補。
    - App models 只做 parsing/representation，不做 authorization decision 或 domain mutation。
 
 9. `policy-summary-ui`
    - 配合 API `plan.policies.md`，App models 讀取 API response 的 `policies` / `capabilities`。
    - Views 根據 policy summary 顯示 actions：
      - `account.capabilities.can_list_accounts`
-     - `attachment.policies.can_delete`
+     - ✅ `attachment.can_delete?`
      - `attachment.policies.can_view`
      - `attachment.policies.can_view_masked`
      - `attachment.policies.can_export_masked_pdf`
    - UI hide/show 只當 UX；API policy 仍是安全邊界。
-   - 若 API 尚未回傳 policy summaries，先以 current behavior 保留，並把 integration point 標為 deferred。
+   - 目前 API attachment index 已回傳 policy summary；App 已接 `can_delete`，其他欄位 deferred。
 
 10. `validation-tests-and-docs`
    - Form unit specs：happy path、missing fields、invalid format、cross-field mismatch。
    - Controller specs：invalid form 不呼叫 API service，會 re-render 並顯示 errors。
-   - Service specs：service 只處理 validated payload，不再負責 form shape validation。
+   - Service specs：service 只處理 validated payload，不再負責 form shape validation。`ChangePassword`、`UpdateAccount` 已採用此 pattern；registration/upload/auth services 後續再評估。
    - 更新 README、`.github/copilot-instructions.md`、`local.md`。
 
 ## 依賴順序
