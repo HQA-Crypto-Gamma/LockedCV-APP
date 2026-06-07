@@ -28,10 +28,51 @@ describe 'Attachment scan route' do
     _(last_response.status).must_equal 200
     _(last_response.body).must_include 'Mask Review'
     _(last_response.body).must_include 'Ada [EMAIL] [PHONE_NUMBER]'
+    _(last_response.body).must_include 'Mask fields'
+    _(last_response.body).must_include 'Preview masked PDF'
+    _(last_response.body).must_include 'value="email"'
+    _(last_response.body).must_include 'value="tel"'
+    _(last_response.body).must_include 'Not detected'
+    _(last_response.body).must_include '1 detected'
     _(last_response.body).must_include 'Email'
     _(last_response.body).must_include 'ada@example.com'
     _(last_response.body).must_include 'type="checkbox"'
     assert_requested(:get, "#{API_URL}/attachments/#{@attachment_id}/masked_text")
+  end
+
+  it 'HAPPY: returns a selected-label masked PDF preview for a logged-in account' do
+    stub_login
+    stub_pdf_preview
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments/preview",
+      { selected_labels: %w[email tel] }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
+
+    _(last_response.status).must_equal 200
+    _(last_response.headers['Content-Type']).must_include 'application/pdf'
+    _(last_response.headers['Content-Disposition']).must_equal 'inline; filename="masked_preview.pdf"'
+    _(last_response.body.byteslice(0, 4)).must_equal '%PDF'
+    assert_requested(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/preview",
+      body: { selected_labels: %w[email tel] }.to_json,
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF previews without calling the API' do
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments/preview",
+      { selected_labels: ['email'] }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/preview")
   end
 
   it 'SECURITY: redirects guests to the login modal without calling the API' do
@@ -103,6 +144,19 @@ describe 'Attachment scan route' do
                }
              }.to_json,
              headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_pdf_preview
+    WebMock.stub_request(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/preview")
+           .with(
+             body: { selected_labels: %w[email tel] }.to_json,
+             headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+           )
+           .to_return(
+             status: 200,
+             body: "%PDF-1.4\npreview",
+             headers: { 'content-type' => 'application/pdf' }
            )
   end
 
