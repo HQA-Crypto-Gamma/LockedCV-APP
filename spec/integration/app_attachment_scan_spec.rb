@@ -27,9 +27,10 @@ describe 'Attachment scan route' do
 
     _(last_response.status).must_equal 200
     _(last_response.body).must_include 'Mask Review'
-    _(last_response.body).must_include 'Ada [EMAIL] [PHONE_NUMBER]'
+    _(last_response.body).must_include 'Masked PDF'
+    _(last_response.body).must_include 'data-pdf-preview-url'
+    _(last_response.body).must_include 'data-pdf-preview-frame'
     _(last_response.body).must_include 'Mask fields'
-    _(last_response.body).must_include 'Preview masked PDF'
     _(last_response.body).must_include 'value="email"'
     _(last_response.body).must_include 'value="tel"'
     _(last_response.body).must_include 'Not detected'

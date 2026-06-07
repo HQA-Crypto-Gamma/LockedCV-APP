@@ -14,9 +14,9 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
     .scan-panel-heading
       div
         p.panel-kicker Preview
-        h2 Masked text
+        h2 Masked PDF
       span.status-pill.status-pill--masked Ready
-    pre.scan-preview-text = scan_result.masked_text
+    iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" style="width: 100%; min-height: 620px; height: 70vh;" data-pdf-preview-frame=true
 
   aside.scan-fields-panel
     .scan-panel-heading
@@ -47,9 +47,6 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
                     small = source.tr('_', ' ')
             - else
               p.scan-mask-field-empty Not detected in this attachment.
-    .scan-preview-actions
-      button.button type="button" data-preview-pdf-button=true Preview masked PDF
-      span.scan-preview-action-status data-preview-pdf-status=true Ready
 
 javascript:
   (() => {
@@ -57,12 +54,14 @@ javascript:
     if (!workspace) return;
 
     const previewUrl = workspace.dataset.pdfPreviewUrl;
-    const button = workspace.querySelector('[data-preview-pdf-button]');
-    const status = workspace.querySelector('[data-preview-pdf-status]');
+    const previewFrame = workspace.querySelector('[data-pdf-preview-frame]');
+    const status = workspace.querySelector('.status-pill');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
-    if (!previewUrl || !button || checkboxes.length === 0) return;
+    if (!previewUrl || !previewFrame || checkboxes.length === 0) return;
 
+    let debounceTimer;
     let currentPdfUrl;
+    let requestId = 0;
 
     const selectedLabels = () => checkboxes
       .filter((checkbox) => checkbox.checked)
@@ -72,9 +71,10 @@ javascript:
       if (status) status.textContent = text;
     };
 
-    button.addEventListener('click', () => {
-      button.disabled = true;
-      setStatus('Preparing');
+    const updatePreview = () => {
+      const currentRequest = requestId + 1;
+      requestId = currentRequest;
+      setStatus('Updating');
 
       fetch(previewUrl, {
         method: 'POST',
@@ -90,20 +90,28 @@ javascript:
           return response.blob();
         })
         .then((pdfBlob) => {
+          if (currentRequest !== requestId) return;
           if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
           currentPdfUrl = URL.createObjectURL(pdfBlob);
-          window.open(currentPdfUrl, '_blank', 'noopener');
+          previewFrame.src = currentPdfUrl;
           setStatus('Ready');
         })
         .catch(() => {
+          if (currentRequest !== requestId) return;
           setStatus('Error');
-        })
-        .finally(() => {
-          button.disabled = false;
         });
+    };
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(updatePreview, 350);
+      });
     });
 
     window.addEventListener('beforeunload', () => {
       if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
     });
+
+    updatePreview();
   })();

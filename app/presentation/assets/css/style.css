@@ -650,17 +650,15 @@ button:disabled {
   list-style: none;
 }
 
-.scan-preview-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-top: 14px;
-}
-
-.scan-preview-action-status {
-  color: #66727d;
-  font-size: 0.9rem;
+.scan-pdf-preview {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 620px;
+  height: 70vh;
+  border: 1px solid #d9e0e5;
+  border-radius: 6px;
+  background: #f8fafb;
 }
 
 .scan-mask-field-values {
