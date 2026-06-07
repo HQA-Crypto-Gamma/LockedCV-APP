@@ -32,6 +32,15 @@ module LockedCV
             end
           end
 
+          routing.on String do |masked_attachment_id|
+            routing.on 'download' do
+              # GET /attachments/[attachment_id]/masked_attachments/[masked_attachment_id]/download
+              routing.get do
+                download_masked_pdf(routing, attachment_id, masked_attachment_id)
+              end
+            end
+          end
+
           # POST /attachments/[attachment_id]/masked_attachments
           routing.post do
             create_masked_pdf(routing, attachment_id)
@@ -135,6 +144,25 @@ module LockedCV
     rescue CreateMaskedPdf::ServiceUnavailableError => e
       App.logger.error "MASKED PDF CREATE FAILED: #{e.inspect}"
       preview_failed(routing, 'Could not create masked attachment', 502)
+    end
+
+    def download_masked_pdf(routing, attachment_id, masked_attachment_id)
+      pdf_body = DownloadMaskedPdf.new(App.config).call(
+        attachment_id:,
+        masked_attachment_id:,
+        auth_token: @current_account.auth_token
+      )
+
+      routing.response['Content-Type'] = 'application/pdf'
+      routing.response['Content-Disposition'] = 'attachment; filename="masked_attachment.pdf"'
+      pdf_body
+    rescue DownloadMaskedPdf::NotFoundError
+      preview_failed(routing, 'Masked attachment not found', 404)
+    rescue DownloadMaskedPdf::UnauthorizedError
+      preview_failed(routing, 'Please log in again before downloading', 401)
+    rescue DownloadMaskedPdf::ServiceUnavailableError => e
+      App.logger.error "MASKED PDF DOWNLOAD FAILED: #{e.inspect}"
+      preview_failed(routing, 'Could not download masked attachment', 502)
     end
 
     def masked_pdf_selected_labels(routing)

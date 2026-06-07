@@ -36,6 +36,15 @@ module LockedCV
       response.body.to_s
     end
 
+    def get_binary(path, auth_token: nil)
+      response = http(auth_token)
+                 .headers('Accept' => 'application/pdf')
+                 .get(url(path))
+      raise ApiError.new(response.code, parsed_error_body(response)) unless (200..299).cover?(response.code)
+
+      response.body.to_s
+    end
+
     def post_multipart(path, fields, auth_token: nil)
       parse(http(auth_token).post(url(path), form: fields))
     end

@@ -109,6 +109,35 @@ describe 'Attachment scan route' do
     )
   end
 
+  it 'HAPPY: downloads a saved masked PDF for a logged-in account' do
+    stub_login
+    stub_masked_pdf_download
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    get "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+
+    _(last_response.status).must_equal 200
+    _(last_response.headers['Content-Type']).must_include 'application/pdf'
+    _(last_response.headers['Content-Disposition']).must_equal 'attachment; filename="masked_attachment.pdf"'
+    _(last_response.body.byteslice(0, 4)).must_equal '%PDF'
+    assert_requested(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download",
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF downloads without calling the API' do
+    get "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+    )
+  end
+
   it 'SECURITY: redirects guests away from masked PDF creation without calling the API' do
     post(
       "/attachments/#{@attachment_id}/masked_attachments",
@@ -229,6 +258,19 @@ describe 'Attachment scan route' do
                }
              }.to_json,
              headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_masked_pdf_download
+    WebMock.stub_request(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+    )
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: "%PDF-1.4\nmasked",
+             headers: { 'content-type' => 'application/pdf' }
            )
   end
 

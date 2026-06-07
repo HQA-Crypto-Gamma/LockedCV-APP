@@ -78,6 +78,7 @@ javascript:
     const backButton = document.querySelector('[data-back-mask-step-button]');
     const createButton = document.querySelector('[data-create-pdf-button]');
     const savedActions = document.querySelector('[data-saved-mask-actions]');
+    const downloadButton = document.querySelector('[data-download-mask-button]');
     const createStatus = document.querySelector('[data-create-pdf-status]');
     const reviewStatus = workspace.querySelector('[data-review-step-status]');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
@@ -266,6 +267,14 @@ javascript:
           .finally(() => {
             createButton.disabled = false;
           });
+      });
+    }
+
+    if (downloadButton) {
+      downloadButton.addEventListener('click', () => {
+        if (!workspace.dataset.maskedAttachmentId) return;
+
+        window.location.href = `${createUrl}/${workspace.dataset.maskedAttachmentId}/download`;
       });
     }
 
