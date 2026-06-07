@@ -4,8 +4,8 @@
 section.scan-hero style="width: min(calc(100vw - 48px), 1480px); margin-left: 50%; transform: translateX(-50%);"
   div
     p.eyebrow Scan preview
-    h1 Mask Review
-  .scan-hero__meta
+    h1 data-scan-page-title=true Mask Review
+  .scan-hero__meta data-scan-hero-meta=true
     span Detected fields
     strong = scan_result.match_count
 
@@ -14,11 +14,11 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
     .scan-panel-heading
       div
         p.panel-kicker Preview
-        h2 Masked PDF
+        h2 data-scan-preview-title=true Masked PDF
       span.status-pill.status-pill--masked Ready
     iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" style="width: 100%; height: calc(var(--scan-panel-height) - 92px); min-height: 0;" data-pdf-preview-frame=true
 
-  aside.scan-fields-panel style="height: var(--scan-panel-height); display: flex; flex-direction: column; min-height: 0;"
+  aside.scan-fields-panel data-mask-fields-panel=true style="height: var(--scan-panel-height); display: flex; flex-direction: column; min-height: 0;"
     .scan-review-step data-mask-review-panel=true style="display: flex; flex: 1; flex-direction: column; min-height: 0;"
       .scan-panel-heading
         div
@@ -51,16 +51,10 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
       .scan-preview-actions style="display: flex; flex: 0 0 auto; justify-content: flex-end; width: 100%; margin-top: auto; padding-top: 14px; border-top: 1px solid #d9e0e5;"
         button.button type="button" data-next-mask-step-button=true Next
 
-    .scan-confirm-step hidden=true data-mask-confirm-panel=true style="flex: 1; flex-direction: column; min-height: 0;"
-      .scan-panel-heading
-        div
-          p.panel-kicker Confirm
-          h2 Confirm masked PDF
-      p.scan-confirm-copy The PDF preview is ready to save with the selected mask fields.
-      .scan-preview-actions
-        button.button.button--secondary type="button" data-back-mask-step-button=true Back
-        button.button type="button" data-create-pdf-button=true Confirm masked PDF
-        span.scan-preview-action-status data-create-pdf-status=true Not saved
+section.scan-final-actions hidden=true data-mask-confirm-panel=true style="display: none;"
+  button.button.button--secondary type="button" data-back-mask-step-button=true Back
+  button.button type="button" data-create-pdf-button=true Confirm and save
+  span.scan-preview-action-status hidden=true data-create-pdf-status=true
 
 javascript:
   (() => {
@@ -71,12 +65,16 @@ javascript:
     const createUrl = workspace.dataset.pdfCreateUrl;
     const previewFrame = workspace.querySelector('[data-pdf-preview-frame]');
     const status = workspace.querySelector('.status-pill');
+    const pageTitle = document.querySelector('[data-scan-page-title]');
+    const previewTitle = workspace.querySelector('[data-scan-preview-title]');
+    const heroMeta = document.querySelector('[data-scan-hero-meta]');
+    const fieldsPanel = workspace.querySelector('[data-mask-fields-panel]');
     const reviewPanel = workspace.querySelector('[data-mask-review-panel]');
-    const confirmPanel = workspace.querySelector('[data-mask-confirm-panel]');
+    const confirmPanel = document.querySelector('[data-mask-confirm-panel]');
     const nextButton = workspace.querySelector('[data-next-mask-step-button]');
-    const backButton = workspace.querySelector('[data-back-mask-step-button]');
-    const createButton = workspace.querySelector('[data-create-pdf-button]');
-    const createStatus = workspace.querySelector('[data-create-pdf-status]');
+    const backButton = document.querySelector('[data-back-mask-step-button]');
+    const createButton = document.querySelector('[data-create-pdf-button]');
+    const createStatus = document.querySelector('[data-create-pdf-status]');
     const reviewStatus = workspace.querySelector('[data-review-step-status]');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
     if (!previewUrl || !previewFrame || checkboxes.length === 0) return;
@@ -109,13 +107,45 @@ javascript:
 
     const showReviewStep = () => {
       if (reviewPanel) reviewPanel.hidden = false;
-      if (confirmPanel) confirmPanel.hidden = true;
+      if (fieldsPanel) {
+        fieldsPanel.hidden = false;
+        fieldsPanel.style.display = 'flex';
+      }
+      if (confirmPanel) {
+        confirmPanel.hidden = true;
+        confirmPanel.style.display = 'none';
+      }
+      if (backButton) backButton.style.cssText = '';
+      if (createButton) createButton.style.cssText = '';
+      workspace.style.gridTemplateColumns = 'minmax(0, 2fr) minmax(380px, 0.78fr)';
+      workspace.style.width = 'min(calc(100vw - 48px), 1480px)';
+      if (pageTitle) pageTitle.textContent = 'Mask Review';
+      if (previewTitle) previewTitle.textContent = 'Masked PDF';
+      if (heroMeta) heroMeta.hidden = false;
       setReviewStatus('Review the preview before saving.');
     };
 
     const showConfirmStep = () => {
       if (reviewPanel) reviewPanel.hidden = true;
-      if (confirmPanel) confirmPanel.hidden = false;
+      if (fieldsPanel) {
+        fieldsPanel.hidden = true;
+        fieldsPanel.style.display = 'none';
+      }
+      if (confirmPanel) {
+        confirmPanel.hidden = false;
+        confirmPanel.style.display = 'contents';
+      }
+      workspace.style.gridTemplateColumns = 'minmax(0, 1fr)';
+      workspace.style.width = 'min(calc(100vw - 220px), 1320px)';
+      if (backButton) {
+        backButton.style.cssText = 'position: fixed; left: 28px; bottom: 24px; z-index: 20;';
+      }
+      if (createButton) {
+        createButton.style.cssText = 'position: fixed; right: 28px; bottom: 24px; z-index: 20;';
+      }
+      if (pageTitle) pageTitle.textContent = 'Confirm Masked PDF';
+      if (previewTitle) previewTitle.textContent = 'Final masked PDF';
+      if (heroMeta) heroMeta.hidden = true;
       if (workspace.dataset.maskedAttachmentId) {
         setCreateStatus(workspace.dataset.maskedAttachmentName ? `Saved ${workspace.dataset.maskedAttachmentName}` : 'Saved');
       } else {

@@ -34,7 +34,7 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include 'data-mask-review-panel'
     _(last_response.body).must_include 'data-mask-confirm-panel'
     _(last_response.body).must_include 'Next'
-    _(last_response.body).must_include 'Confirm masked PDF'
+    _(last_response.body).must_include 'Confirm and save'
     _(last_response.body).must_include 'Back'
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments"
     _(last_response.body).must_include 'value="email"'
