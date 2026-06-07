@@ -27,6 +27,15 @@ module LockedCV
       parse(http(auth_token).post(url(path), json: body))
     end
 
+    def post_binary(path, body, auth_token: nil)
+      response = http(auth_token)
+                 .headers('Accept' => 'application/pdf')
+                 .post(url(path), json: body)
+      raise ApiError.new(response.code, parsed_error_body(response)) unless (200..299).cover?(response.code)
+
+      response.body.to_s
+    end
+
     def post_multipart(path, fields, auth_token: nil)
       parse(http(auth_token).post(url(path), form: fields))
     end
@@ -75,6 +84,13 @@ module LockedCV
       raise ApiError.new(response.code, parsed) unless (200..299).cover?(response.code)
 
       parsed
+    end
+
+    def parsed_error_body(response)
+      raw = response.body.to_s
+      raw.empty? ? {} : JSON.parse(raw)
+    rescue JSON::ParserError
+      raw
     end
   end
 end

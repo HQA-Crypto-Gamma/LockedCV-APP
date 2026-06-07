@@ -31,7 +31,7 @@ describe 'Attachment upload route' do
     post '/attachments/upload', cv: upload
 
     _(last_response.status).must_equal 302
-    _(last_response.location).must_match %r{/$}
+    _(last_response.location).must_match %r{/attachments/attachment-id/scan$}
     assert_requested(:post, "#{API_URL}/attachments/upload")
   end
 
@@ -68,7 +68,16 @@ describe 'Attachment upload route' do
            .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
            .to_return(
              status: 201,
-             body: { data: { data: { attributes: { 'attachment_name' => 'resume.pdf' } } } }.to_json,
+             body: {
+               data: {
+                 data: {
+                   attributes: {
+                     'id' => 'attachment-id',
+                     'attachment_name' => 'resume.pdf'
+                   }
+                 }
+               }
+             }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end
