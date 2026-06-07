@@ -24,6 +24,15 @@ module LockedCV
           end
         end
 
+        routing.on 'masked_attachments' do
+          routing.on 'preview' do
+            # POST /attachments/[attachment_id]/masked_attachments/preview
+            routing.post do
+              preview_masked_pdf(routing, attachment_id)
+            end
+          end
+        end
+
         routing.on 'delete' do
           # POST /attachments/[attachment_id]/delete
           routing.post do
@@ -77,6 +86,40 @@ module LockedCV
       scan_failed(routing, e, 'Please log in again before scanning', :warn, '/#login-modal')
     rescue GetMaskedAttachmentText::ServiceUnavailableError => e
       scan_failed(routing, e, 'Attachment scan is temporarily unavailable', :error)
+    end
+
+    def preview_masked_pdf(routing, attachment_id)
+      pdf_body = PreviewMaskedPdf.new(App.config).call(
+        attachment_id:,
+        auth_token: @current_account.auth_token,
+        selected_labels: preview_selected_labels(routing)
+      )
+
+      routing.response['Content-Type'] = 'application/pdf'
+      routing.response['Content-Disposition'] = 'inline; filename="masked_preview.pdf"'
+      pdf_body
+    rescue JSON::ParserError, PreviewMaskedPdf::ValidationError
+      preview_failed(routing, 'Invalid selected labels', 400)
+    rescue PreviewMaskedPdf::NotFoundError
+      preview_failed(routing, 'Attachment not found', 404)
+    rescue PreviewMaskedPdf::UnauthorizedError
+      preview_failed(routing, 'Please log in again before scanning', 401)
+    rescue PreviewMaskedPdf::ServiceUnavailableError => e
+      App.logger.error "MASKED PDF PREVIEW FAILED: #{e.inspect}"
+      preview_failed(routing, 'Could not preview masked attachment', 502)
+    end
+
+    def preview_selected_labels(routing)
+      request_data = JSON.parse(routing.body.read)
+      selected_labels = request_data.fetch('selected_labels') { nil }
+      raise PreviewMaskedPdf::ValidationError unless selected_labels.nil? || selected_labels.is_a?(Array)
+
+      selected_labels
+    end
+
+    def preview_failed(routing, message, status)
+      routing.response['Content-Type'] = 'application/json'
+      routing.halt status, { message: }.to_json
     end
 
     def scan_failed(routing, error, message, level, destination = '/')
