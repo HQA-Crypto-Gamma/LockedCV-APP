@@ -31,6 +31,14 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include 'data-pdf-preview-url'
     _(last_response.body).must_include 'data-pdf-preview-frame'
     _(last_response.body).must_include 'Mask fields'
+    _(last_response.body).must_include 'data-mask-review-panel'
+    _(last_response.body).must_include 'data-mask-confirm-panel'
+    _(last_response.body).must_include 'Next'
+    _(last_response.body).must_include 'Confirm and save'
+    _(last_response.body).must_include 'Share'
+    _(last_response.body).must_include 'Download'
+    _(last_response.body).must_include 'Back'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments"
     _(last_response.body).must_include 'value="email"'
     _(last_response.body).must_include 'value="tel"'
     _(last_response.body).must_include 'Not detected'
@@ -74,6 +82,72 @@ describe 'Attachment scan route' do
     _(last_response.status).must_equal 302
     _(last_response.location).must_match %r{/#login-modal$}
     assert_not_requested(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/preview")
+  end
+
+  it 'HAPPY: creates a saved masked PDF for a logged-in account' do
+    stub_login
+    stub_masked_pdf_create
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments",
+      { selected_labels: %w[email tel] }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
+
+    _(last_response.status).must_equal 200
+    _(last_response.headers['Content-Type']).must_include 'application/json'
+    _(JSON.parse(last_response.body)).must_equal(
+      'masked_attachment_id' => 'masked-attachment-id',
+      'attachment_name' => 'masked_resume.pdf'
+    )
+    assert_requested(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments",
+      body: { selected_labels: %w[email tel] }.to_json,
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'HAPPY: downloads a saved masked PDF for a logged-in account' do
+    stub_login
+    stub_masked_pdf_download
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    get "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+
+    _(last_response.status).must_equal 200
+    _(last_response.headers['Content-Type']).must_include 'application/pdf'
+    _(last_response.headers['Content-Disposition']).must_equal 'attachment; filename="masked_attachment.pdf"'
+    _(last_response.body.byteslice(0, 4)).must_equal '%PDF'
+    assert_requested(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download",
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF downloads without calling the API' do
+    get "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF creation without calling the API' do
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments",
+      { selected_labels: ['email'] }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments")
   end
 
   it 'SECURITY: redirects guests to the login modal without calling the API' do
@@ -157,6 +231,45 @@ describe 'Attachment scan route' do
            .to_return(
              status: 200,
              body: "%PDF-1.4\npreview",
+             headers: { 'content-type' => 'application/pdf' }
+           )
+  end
+
+  def stub_masked_pdf_create
+    WebMock.stub_request(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments")
+           .with(
+             body: { selected_labels: %w[email tel] }.to_json,
+             headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+           )
+           .to_return(
+             status: 201,
+             body: {
+               message: 'Masked attachment saved',
+               data: {
+                 data: {
+                   type: 'masked_attachment',
+                   attributes: {
+                     id: 'masked-attachment-id',
+                     attachment_id: @attachment_id,
+                     attachment_name: 'masked_resume.pdf',
+                     route: 'accounts/account-id/masked/masked_resume.pdf'
+                   }
+                 }
+               }
+             }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_masked_pdf_download
+    WebMock.stub_request(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+    )
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: "%PDF-1.4\nmasked",
              headers: { 'content-type' => 'application/pdf' }
            )
   end
