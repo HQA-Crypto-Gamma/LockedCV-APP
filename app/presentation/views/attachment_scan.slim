@@ -1,4 +1,5 @@
 - field_labels = { 'first_name' => 'First name', 'last_name' => 'Last name', 'email' => 'Email', 'phone_number' => 'Phone number', 'birthday' => 'Birthday', 'address' => 'Address', 'identification_number' => 'ID number', 'identification_numbers' => 'ID numbers' }
+- mask_fields = [{ label: 'Name', value: 'name', types: %w[first_name last_name full_name name] }, { label: 'Email', value: 'email', types: %w[email] }, { label: 'Phone', value: 'tel', types: %w[phone phone_number tel] }, { label: 'ID Number', value: 'id', types: %w[identification_number identification_numbers id id_number] }, { label: 'Birthday', value: 'birthday', types: %w[birthday] }, { label: 'Address', value: 'address', types: %w[address] }]
 
 section.scan-hero
   div
@@ -8,7 +9,7 @@ section.scan-hero
     span Detected fields
     strong = scan_result.match_count
 
-section.scan-workspace aria-label="Attachment scan workspace"
+section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview"
   .scan-preview-panel
     .scan-panel-heading
       div
@@ -21,22 +22,88 @@ section.scan-workspace aria-label="Attachment scan workspace"
     .scan-panel-heading
       div
         p.panel-kicker Review
-        h2 Detected fields
-    - if scan_result.empty?
-      p.scan-empty No sensitive fields detected.
-    - else
-      ul.scan-match-list
-        - scan_result.matches.each_with_index do |match, index|
-          - type = match['type'].to_s
-          - value = match['value'].to_s
-          - source = match['source'].to_s
-          li.scan-match-item
-            label.scan-match-control for="mask-match-#{index}"
-              input id="mask-match-#{index}" type="checkbox" checked=true
-              span.scan-match-check
-            .scan-match-content
-              .scan-match-title
-                strong = field_labels.fetch(type, type.split('_').map(&:capitalize).join(' '))
-                - unless source.empty?
-                  span = source.tr('_', ' ')
-              code = value
+        h2 Mask fields
+    ul.scan-mask-label-list
+      - mask_fields.each do |mask_field|
+        - field_matches = scan_result.matches.select { |match| mask_field[:types].include?(match['type'].to_s) }
+        - detected = field_matches.any?
+        li.scan-match-item
+          label.scan-match-control for="mask-label-#{mask_field[:value]}"
+            input id="mask-label-#{mask_field[:value]}" type="checkbox" value=mask_field[:value] checked=detected data-mask-label-checkbox=true
+            span.scan-match-check
+          .scan-match-content
+            .scan-match-title
+              strong = mask_field[:label]
+              - if detected
+                span = "#{field_matches.length} detected"
+              - else
+                span Not detected
+            - if detected
+              .scan-mask-field-values
+                - field_matches.each do |match|
+                  - source = match['source'].to_s
+                  code = match['value'].to_s
+                  - unless source.empty?
+                    small = source.tr('_', ' ')
+            - else
+              p.scan-mask-field-empty Not detected in this attachment.
+    .scan-preview-actions
+      button.button type="button" data-preview-pdf-button=true Preview masked PDF
+      span.scan-preview-action-status data-preview-pdf-status=true Ready
+
+javascript:
+  (() => {
+    const workspace = document.querySelector('.scan-workspace');
+    if (!workspace) return;
+
+    const previewUrl = workspace.dataset.pdfPreviewUrl;
+    const button = workspace.querySelector('[data-preview-pdf-button]');
+    const status = workspace.querySelector('[data-preview-pdf-status]');
+    const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
+    if (!previewUrl || !button || checkboxes.length === 0) return;
+
+    let currentPdfUrl;
+
+    const selectedLabels = () => checkboxes
+      .filter((checkbox) => checkbox.checked)
+      .map((checkbox) => checkbox.value);
+
+    const setStatus = (text) => {
+      if (status) status.textContent = text;
+    };
+
+    button.addEventListener('click', () => {
+      button.disabled = true;
+      setStatus('Preparing');
+
+      fetch(previewUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/pdf',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ selected_labels: selectedLabels() })
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error('Preview failed');
+          return response.blob();
+        })
+        .then((pdfBlob) => {
+          if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+          currentPdfUrl = URL.createObjectURL(pdfBlob);
+          window.open(currentPdfUrl, '_blank', 'noopener');
+          setStatus('Ready');
+        })
+        .catch(() => {
+          setStatus('Error');
+        })
+        .finally(() => {
+          button.disabled = false;
+        });
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+    });
+  })();
