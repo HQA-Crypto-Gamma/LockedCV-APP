@@ -1,0 +1,44 @@
+- masked_attachments ||= []
+
+section.versions-hero
+  div
+    p.eyebrow Saved masks
+    h1 Masked versions
+  a.button.button--secondary href="/" Back to vault
+
+section.document-section
+  .section-heading
+    div
+      h2 Attachment #{attachment_id}
+
+  .document-table-wrapper
+    table.document-table.versions-table
+      thead
+        tr
+          th File
+          th Created
+          th Masked items
+          th Actions
+      tbody
+        - if masked_attachments.empty?
+          tr
+            td.empty-table colspan="4" No masked versions saved yet.
+        - masked_attachments.each do |masked_attachment|
+          - attachment_name = masked_attachment.attachment_name.to_s
+          - extension = File.extname(attachment_name).delete('.').upcase
+          - extension = 'PDF' if extension.empty?
+          tr
+            td
+              .file-cell
+                span.file-badge = extension
+                div
+                  strong = attachment_name
+                  span Saved masked PDF
+            td
+              span.muted-value = masked_attachment.created_at || '-'
+            td
+              span.version-count = masked_attachment.masked_items_count
+            td
+              .table-actions
+                button.table-link-button type="button" disabled=true Download
+                button.table-link-button type="button" disabled=true Share

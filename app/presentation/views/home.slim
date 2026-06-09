@@ -53,7 +53,7 @@
             th Uploaded
             th Status
             th Risk
-            th Sensitive items
+            th Masked versions
             th
         tbody
           - if attachments.empty?
@@ -68,7 +68,10 @@
                 .file-cell
                   span.file-badge = extension
                   div
-                    strong = attachment_name
+                    - if attachment.can_view?
+                      a.file-name-link href="/attachments/#{attachment.id}/scan" = attachment_name
+                    - else
+                      strong = attachment_name
                     - if attachment.viewer_masked?
                       span Masked shared copy
                     - else
@@ -78,12 +81,17 @@
                 span.status-pill.status-pill--saved Saved
               td
                 span.muted-value -
-              td = '-'
               td
-                - if attachment.can_delete?
-                  form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
-                    button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
-                      span.trash-icon aria-hidden="true"
+                - if attachment.masked_versions?
+                  a.version-count.version-count--link href="/attachments/#{attachment.id}/masked_attachments" = attachment.masked_attachments_count
+                - else
+                  span.version-count = attachment.masked_attachments_count
+              td
+                .table-actions
+                  - if attachment.can_delete?
+                    form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
+                      button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
+                        span.trash-icon aria-hidden="true"
 - else
   section.public-home
     .public-home__copy
