@@ -57,7 +57,7 @@ module LockedCV
 
             @current_session.current_account = account
             flash[:notice] = "Welcome back #{account.username}!"
-            routing.redirect '/'
+            routing.redirect post_login_redirect
           rescue SsoStateError
             flash[:error] = 'Sign-in session expired or could not be verified'
             routing.redirect '/'
@@ -183,7 +183,11 @@ module LockedCV
 
       @current_session.current_account = account
       flash[:notice] = "Welcome back #{account.username}!"
-      routing.redirect '/'
+      routing.redirect post_login_redirect
+    end
+
+    def post_login_redirect
+      session.delete('post_login_redirect') || '/'
     end
 
     def complete_registration(routing, registration_token)
