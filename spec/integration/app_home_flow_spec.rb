@@ -27,6 +27,9 @@ describe 'Home flow' do
     _(last_response.status).must_equal 200
     _(last_response.body).must_include 'shared_resume.pdf'
     _(last_response.body).must_include 'Masked shared copy'
+    _(last_response.body).must_include 'Masked versions'
+    _(last_response.body).must_include '/attachments/shared-attachment-id/masked_attachments'
+    _(last_response.body).must_include 'version-count--link'
     _(last_response.body).wont_include 'Delete shared_resume.pdf'
   end
 
@@ -52,7 +55,8 @@ describe 'Home flow' do
                    data: {
                      attributes: {
                        'id' => 'shared-attachment-id',
-                       'attachment_name' => 'shared_resume.pdf'
+                       'attachment_name' => 'shared_resume.pdf',
+                       'masked_attachments_count' => 1
                      }
                    },
                    policy: {
