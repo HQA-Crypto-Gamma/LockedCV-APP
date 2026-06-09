@@ -41,6 +41,11 @@ module LockedCV
             end
           end
 
+          # GET /attachments/[attachment_id]/masked_attachments
+          routing.get do
+            show_masked_attachments(routing, attachment_id)
+          end
+
           # POST /attachments/[attachment_id]/masked_attachments
           routing.post do
             create_masked_pdf(routing, attachment_id)
@@ -100,6 +105,26 @@ module LockedCV
       scan_failed(routing, e, 'Please log in again before scanning', :warn, '/#login-modal')
     rescue GetMaskedAttachmentText::ServiceUnavailableError => e
       scan_failed(routing, e, 'Attachment scan is temporarily unavailable', :error)
+    end
+
+    def show_masked_attachments(routing, attachment_id)
+      masked_attachments = ListMaskedAttachments.new(App.config).call(
+        attachment_id:,
+        auth_token: @current_account.auth_token
+      )
+
+      view :masked_attachments,
+           locals: {
+             current_account: @current_account,
+             attachment_id:,
+             masked_attachments:
+           }
+    rescue ListMaskedAttachments::NotFoundError => e
+      scan_failed(routing, e, 'Attachment not found', :warn)
+    rescue ListMaskedAttachments::UnauthorizedError => e
+      scan_failed(routing, e, 'Please log in again before viewing versions', :warn, '/#login-modal')
+    rescue ListMaskedAttachments::ServiceUnavailableError => e
+      scan_failed(routing, e, 'Masked versions are temporarily unavailable', :error)
     end
 
     def preview_masked_pdf(routing, attachment_id)
