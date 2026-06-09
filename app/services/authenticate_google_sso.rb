@@ -18,7 +18,7 @@ module LockedCV
     def call(id_token:)
       raise UnauthorizedError, 'Missing Google id token' if id_token.to_s.empty?
 
-      response = @client.post('/auth/sso', { provider: 'google', id_token:, jwks: google_jwks })
+      response = @client.post('/auth/sso', SignedMessage.sign({ provider: 'google', id_token:, jwks: google_jwks }))
       AuthenticatedAccountResponse.from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)

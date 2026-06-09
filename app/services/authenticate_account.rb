@@ -15,7 +15,7 @@ module LockedCV
     def call(username:, password:)
       raise UnauthorizedError, 'Username and password required' if username.to_s.strip.empty? || password.to_s.empty?
 
-      response = @client.post('/auth/authenticate', { username:, password: })
+      response = @client.post('/auth/authenticate', SignedMessage.sign({ username:, password: }))
       account_response_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)
@@ -30,7 +30,7 @@ module LockedCV
     end
 
     def api_error_for(error)
-      return UnauthorizedError.new("Authentication failed: #{error.message}") if error.status == 403
+      return UnauthorizedError.new("Authentication failed: #{error.message}") if error.status == 401
 
       unavailable_error_for(error)
     end

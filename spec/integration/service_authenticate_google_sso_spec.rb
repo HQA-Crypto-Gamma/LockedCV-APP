@@ -22,7 +22,13 @@ describe 'AuthenticateGoogleSso service' do
   it 'HAPPY: sends the Google id token and JWKS to the API' do
     stub_google_jwks
     WebMock.stub_request(:post, "#{API_URL}/auth/sso")
-           .with(body: { provider: 'google', id_token: @id_token, jwks: @jwks }.to_json)
+           .with do |request|
+             signed_data(request) == {
+               'provider' => 'google',
+               'id_token' => @id_token,
+               'jwks' => JSON.parse(@jwks.to_json)
+             }
+           end
            .to_return(
              status: 200,
              body: { data: { type: 'authenticated_account', attributes: @account_attributes } }.to_json,

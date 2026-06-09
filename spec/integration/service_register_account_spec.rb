@@ -35,7 +35,7 @@ describe 'RegisterAccount service' do
 
   it 'HAPPY: posts registration payload and returns account attributes' do
     WebMock.stub_request(:post, "#{API_URL}/accounts")
-           .with(body: @expected_payload.to_json)
+           .with { |request| signed_data(request) == @expected_payload.transform_keys(&:to_s) }
            .to_return(
              status: 201,
              body: { data: { data: { attributes: @account_attributes } } }.to_json,
@@ -68,7 +68,7 @@ describe 'RegisterAccount service' do
 
   it 'BAD: raises ValidationError on API validation failure' do
     WebMock.stub_request(:post, "#{API_URL}/accounts")
-           .with(body: @expected_payload.to_json)
+           .with { |request| signed_data(request) == @expected_payload.transform_keys(&:to_s) }
            .to_return(
              status: 400,
              body: { message: 'This user is already registered' }.to_json,
@@ -83,7 +83,7 @@ describe 'RegisterAccount service' do
 
   it 'BAD: raises ServiceUnavailableError when API fails' do
     WebMock.stub_request(:post, "#{API_URL}/accounts")
-           .with(body: @expected_payload.to_json)
+           .with { |request| signed_data(request) == @expected_payload.transform_keys(&:to_s) }
            .to_return(
              status: 500,
              body: { message: 'boom' }.to_json,

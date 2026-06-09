@@ -20,7 +20,7 @@ describe 'AuthenticateAccount service' do
 
   it 'HAPPY: returns authenticated account attributes' do
     WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
-           .with(body: @credentials.to_json)
+           .with { |request| signed_data(request) == @credentials.transform_keys(&:to_s) }
            .to_return(
              status: 200,
              body: { data: { type: 'authenticated_account', attributes: @account_attributes } }.to_json,
@@ -40,9 +40,9 @@ describe 'AuthenticateAccount service' do
 
   it 'BAD: raises UnauthorizedError when credentials are rejected' do
     WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
-           .with(body: @credentials.to_json)
+           .with { |request| signed_data(request) == @credentials.transform_keys(&:to_s) }
            .to_return(
-             status: 403,
+             status: 401,
              body: { message: 'Invalid credentials' }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
@@ -54,7 +54,7 @@ describe 'AuthenticateAccount service' do
 
   it 'BAD: raises ServiceUnavailableError when API fails' do
     WebMock.stub_request(:post, "#{API_URL}/auth/authenticate")
-           .with(body: @credentials.to_json)
+           .with { |request| signed_data(request) == @credentials.transform_keys(&:to_s) }
            .to_return(
              status: 500,
              body: { message: 'boom' }.to_json,

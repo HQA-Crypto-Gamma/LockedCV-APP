@@ -22,10 +22,10 @@
     - callback 用 `session.delete('sso_state')` 取出 expected state 並比對。
   - `rbnacl` 與 `base64` gems。
   - `ApiClient` 與多個 service 呼叫 API。
-- 目前尚未有：
   - `SignedMessage` library。
-  - App-side `SIGNING_KEY` config。
-  - pre-login API service 的 signed body。
+  - `SIGNING_KEY` config placeholder。
+  - Pre-login API services send signed request wrappers。
+- 目前尚未有：
   - `secure_headers` gem 與 `app/controllers/security.rb`。
   - CSP violation reporting route。
 - CSP 前置風險：
@@ -82,7 +82,7 @@
 
 ## 實作策略（分階段）
 
-1. **SignedMessage library**
+1. **SignedMessage library** - done
    - 新增 `app/lib/signed_message.rb`。
    - 提供：
      - `.setup(signing_key64)`
@@ -90,13 +90,14 @@
    - 使用 `RbNaCl::SigningKey` 與 `Base64.strict_encode64`。
    - 補 unit specs：output shape、signature 可被 verify key 驗證、tampered data 驗證失敗、missing key raise。
 
-2. **Config and secrets**
+2. **Config and secrets** - partially done
    - `config/environments.rb` setup `SignedMessage`。
    - `config/secrets.example.yml` 加入 `SIGNING_KEY`。
    - Heroku APP 需要加 `SIGNING_KEY`。
    - Heroku API 需要加對應的 `VERIFY_KEY`。
+   - Remaining：deployment 前在兩個 Heroku apps 設定 production keypair。
 
-3. **Sign pre-login services**
+3. **Sign pre-login services** - done
    - 在 service call site 包 body：
 
      ```ruby
