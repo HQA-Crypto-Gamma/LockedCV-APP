@@ -46,6 +46,13 @@ module LockedCV
                 delete_masked_attachment(routing, attachment_id, masked_attachment_id)
               end
             end
+
+            routing.on 'share_links' do
+              # POST /attachments/[attachment_id]/masked_attachments/[masked_attachment_id]/share_links
+              routing.post do
+                create_masked_attachment_share_link(routing, attachment_id, masked_attachment_id)
+              end
+            end
           end
 
           # GET /attachments/[attachment_id]/masked_attachments
@@ -69,7 +76,7 @@ module LockedCV
 
       # GET /attachments
       routing.get do
-        attachments = current_account_attachments
+        attachments = current_account_owned_attachments
         view 'attachment_history',
              locals: {
                current_account: @current_account,
@@ -231,6 +238,34 @@ module LockedCV
         :error,
         "/attachments/#{attachment_id}/masked_attachments"
       )
+    end
+
+    def create_masked_attachment_share_link(routing, attachment_id, masked_attachment_id)
+      share_link = CreateMaskedAttachmentShareLink.new(App.config).call(
+        attachment_id:,
+        masked_attachment_id:,
+        auth_token: @current_account.auth_token
+      )
+      share_url = absolute_share_url(share_link.fetch('share_url'))
+
+      routing.response['Content-Type'] = 'application/json'
+      {
+        token: share_link.fetch('token'),
+        share_url:
+      }.to_json
+    rescue CreateMaskedAttachmentShareLink::NotFoundError
+      preview_failed(routing, 'Masked attachment not found', 404)
+    rescue CreateMaskedAttachmentShareLink::UnauthorizedError
+      preview_failed(routing, 'Please log in again before sharing', 401)
+    rescue CreateMaskedAttachmentShareLink::ServiceUnavailableError => e
+      App.logger.error "MASKED PDF SHARE LINK CREATE FAILED: #{e.inspect}"
+      preview_failed(routing, 'Could not create share link', 502)
+    end
+
+    def absolute_share_url(path)
+      return path if path.start_with?('http://', 'https://')
+
+      "#{App.config.APP_URL}#{path}"
     end
 
     def encrypted_download_password(routing)

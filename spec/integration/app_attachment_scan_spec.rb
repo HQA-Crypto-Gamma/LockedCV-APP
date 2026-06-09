@@ -39,6 +39,8 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include 'Download'
     _(last_response.body).must_include 'Set PDF password'
     _(last_response.body).must_include 'Download encrypted PDF'
+    _(last_response.body).must_include 'Share masked PDF'
+    _(last_response.body).must_include 'Copy link'
     _(last_response.body).must_include 'Back'
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments"
     _(last_response.body).must_include 'value="email"'
@@ -179,6 +181,10 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download"
     _(last_response.body).must_include 'Set PDF password'
     _(last_response.body).must_include 'Download encrypted PDF'
+    _(last_response.body).must_include 'data-version-share-button'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+    _(last_response.body).must_include 'Share masked PDF'
+    _(last_response.body).must_include 'Copy link'
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
     _(last_response.body).must_include 'Delete masked_resume.pdf'
     assert_requested(
@@ -209,6 +215,38 @@ describe 'Attachment scan route' do
       :delete,
       "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id",
       headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'HAPPY: creates a share link for a saved masked PDF version' do
+    stub_login
+    stub_masked_version_share_link_create
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+
+    _(last_response.status).must_equal 200
+    _(last_response.headers['Content-Type']).must_include 'application/json'
+    _(JSON.parse(last_response.body)).must_equal(
+      'token' => 'share-token',
+      'share_url' => "#{app.config.APP_URL}/share/masked-attachments/share-token"
+    )
+    assert_requested(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links",
+      body: '{}',
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF share link creation without calling the API' do
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
     )
   end
 
@@ -380,6 +418,31 @@ describe 'Attachment scan route' do
            .to_return(
              status: 200,
              body: { message: 'Masked attachment deleted' }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_masked_version_share_link_create
+    WebMock.stub_request(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+    )
+           .with(
+             body: '{}',
+             headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+           )
+           .to_return(
+             status: 201,
+             body: {
+               message: 'Masked attachment share link created',
+               data: {
+                 type: 'masked_attachment_share_link',
+                 attributes: {
+                   token: 'share-token',
+                   share_url: '/share/masked-attachments/share-token'
+                 }
+               }
+             }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end
