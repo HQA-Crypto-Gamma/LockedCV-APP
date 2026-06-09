@@ -26,6 +26,14 @@ module LockedCV
       masked_attachments_count.positive?
     end
 
+    def created_at
+      attributes['created_at']
+    end
+
+    def uploaded_at
+      created_at || '-'
+    end
+
     def role
       policy['role']
     end

@@ -8,7 +8,8 @@ describe 'ListAttachments service' do
     @attachment_attributes = {
       'id' => 'attachment-id',
       'attachment_name' => 'resume.pdf',
-      'masked_attachments_count' => 2
+      'masked_attachments_count' => 2,
+      'created_at' => '2026-06-09 20:41:04 +0800'
     }
     @path = "#{API_URL}/attachments"
   end
@@ -46,6 +47,8 @@ describe 'ListAttachments service' do
     _(attachments.first.attachment_name).must_equal 'resume.pdf'
     _(attachments.first.masked_attachments_count).must_equal 2
     _(attachments.first.masked_versions?).must_equal true
+    _(attachments.first.created_at).must_equal '2026-06-09 20:41:04 +0800'
+    _(attachments.first.uploaded_at).must_equal '2026-06-09 20:41:04 +0800'
     _(attachments.first.role).must_equal 'owner'
     _(attachments.first.owner?).must_equal true
     _(attachments.first.viewer_masked?).must_equal false
