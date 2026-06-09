@@ -59,6 +59,19 @@ section.scan-final-actions hidden=true data-mask-confirm-panel=true style="displ
     button.button type="button" data-download-mask-button=true style="min-width: 132px;" Download
   span.scan-preview-action-status hidden=true data-create-pdf-status=true
 
+.scan-password-modal hidden=true data-password-modal=true role="dialog" aria-modal="true" aria-labelledby="password-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
+  .scan-password-modal__backdrop data-password-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"
+  .scan-password-modal__dialog style="position: relative; z-index: 1; width: min(440px, 100%); padding: 26px; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 24px 70px rgb(29 38 48 / 24%);"
+    h2#password-modal-title style="margin: 0; font-size: 1.45rem;" Set PDF password
+    p style="margin: 10px 0 18px; color: #4d5a64;" Set the password people will need to open this encrypted PDF.
+    form data-password-form=true
+      label.required-field for="encrypted-pdf-password" Password
+      input#encrypted-pdf-password type="password" autocomplete="new-password" data-password-input=true style="box-sizing: border-box; width: 100%; min-height: 42px; margin-top: 6px; padding: 8px 10px; border: 1px solid #b7c0c7; border-radius: 6px;"
+      p.scan-preview-action-status hidden=true data-password-error=true style="margin: 8px 0 0; color: #8d1f16;" Password is required.
+      .scan-preview-actions style="justify-content: flex-end; margin-top: 18px;"
+        button.button.button--secondary type="button" data-password-modal-close=true Cancel
+        button.button type="submit" data-password-submit-button=true Download encrypted PDF
+
 javascript:
   (() => {
     const workspace = document.querySelector('.scan-workspace');
@@ -79,6 +92,12 @@ javascript:
     const createButton = document.querySelector('[data-create-pdf-button]');
     const savedActions = document.querySelector('[data-saved-mask-actions]');
     const downloadButton = document.querySelector('[data-download-mask-button]');
+    const passwordModal = document.querySelector('[data-password-modal]');
+    const passwordForm = document.querySelector('[data-password-form]');
+    const passwordInput = document.querySelector('[data-password-input]');
+    const passwordError = document.querySelector('[data-password-error]');
+    const passwordSubmitButton = document.querySelector('[data-password-submit-button]');
+    const passwordCloseButtons = Array.from(document.querySelectorAll('[data-password-modal-close]'));
     const createStatus = document.querySelector('[data-create-pdf-status]');
     const reviewStatus = workspace.querySelector('[data-review-step-status]');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
@@ -102,6 +121,25 @@ javascript:
 
     const setReviewStatus = (text) => {
       if (reviewStatus) reviewStatus.textContent = text;
+    };
+
+    const showPasswordModal = () => {
+      if (!passwordModal) return;
+
+      passwordModal.hidden = false;
+      passwordModal.style.display = 'flex';
+      if (passwordError) passwordError.hidden = true;
+      if (passwordInput) {
+        passwordInput.value = '';
+        window.setTimeout(() => passwordInput.focus(), 0);
+      }
+    };
+
+    const hidePasswordModal = () => {
+      if (!passwordModal) return;
+
+      passwordModal.hidden = true;
+      passwordModal.style.display = 'none';
     };
 
     const clearSavedState = () => {
@@ -274,9 +312,73 @@ javascript:
       downloadButton.addEventListener('click', () => {
         if (!workspace.dataset.maskedAttachmentId) return;
 
-        window.location.href = `${createUrl}/${workspace.dataset.maskedAttachmentId}/download`;
+        showPasswordModal();
       });
     }
+
+    const downloadEncryptedPdf = (password) => {
+      if (!downloadButton || !workspace.dataset.maskedAttachmentId) return;
+
+      if (passwordSubmitButton) passwordSubmitButton.disabled = true;
+        downloadButton.disabled = true;
+        fetch(`${createUrl}/${workspace.dataset.maskedAttachmentId}/encrypted_download`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'application/pdf',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password })
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error('Download failed');
+            return response.blob();
+          })
+          .then((pdfBlob) => {
+            const downloadUrl = URL.createObjectURL(pdfBlob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = workspace.dataset.maskedAttachmentName ? `encrypted_${workspace.dataset.maskedAttachmentName}` : 'encrypted_masked_attachment.pdf';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(downloadUrl);
+          })
+          .catch(() => {
+            setStatus('Download error');
+          })
+          .finally(() => {
+            if (passwordSubmitButton) passwordSubmitButton.disabled = false;
+            downloadButton.disabled = false;
+          });
+    };
+
+    if (passwordForm) {
+      passwordForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const password = passwordInput ? passwordInput.value.trim() : '';
+        if (!password) {
+          if (passwordError) passwordError.hidden = false;
+          if (passwordInput) passwordInput.focus();
+          return;
+        }
+
+        hidePasswordModal();
+        downloadEncryptedPdf(password);
+      });
+    }
+
+    passwordCloseButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        hidePasswordModal();
+      });
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && passwordModal && !passwordModal.hidden) {
+        hidePasswordModal();
+      }
+    });
 
     window.addEventListener('beforeunload', () => {
       if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);

@@ -37,6 +37,8 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include 'Confirm and save'
     _(last_response.body).must_include 'Share'
     _(last_response.body).must_include 'Download'
+    _(last_response.body).must_include 'Set PDF password'
+    _(last_response.body).must_include 'Download encrypted PDF'
     _(last_response.body).must_include 'Back'
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments"
     _(last_response.body).must_include 'value="email"'
@@ -109,32 +111,41 @@ describe 'Attachment scan route' do
     )
   end
 
-  it 'HAPPY: downloads a saved masked PDF for a logged-in account' do
+  it 'HAPPY: downloads a password-protected masked PDF for a logged-in account' do
     stub_login
     stub_masked_pdf_download
 
     post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
-    get "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download",
+      { password: 'test123' }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
 
     _(last_response.status).must_equal 200
     _(last_response.headers['Content-Type']).must_include 'application/pdf'
-    _(last_response.headers['Content-Disposition']).must_equal 'attachment; filename="masked_attachment.pdf"'
+    _(last_response.headers['Content-Disposition']).must_equal 'attachment; filename="encrypted_masked_attachment.pdf"'
     _(last_response.body.byteslice(0, 4)).must_equal '%PDF'
     assert_requested(
-      :get,
-      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download",
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download",
+      body: { password: 'test123' }.to_json,
       headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
     )
   end
 
-  it 'SECURITY: redirects guests away from masked PDF downloads without calling the API' do
-    get "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+  it 'SECURITY: redirects guests away from encrypted masked PDF downloads without calling the API' do
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download",
+      { password: 'test123' }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
 
     _(last_response.status).must_equal 302
     _(last_response.location).must_match %r{/#login-modal$}
     assert_not_requested(
-      :get,
-      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download"
     )
   end
 
@@ -263,13 +274,16 @@ describe 'Attachment scan route' do
 
   def stub_masked_pdf_download
     WebMock.stub_request(
-      :get,
-      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/download"
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download"
     )
-           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .with(
+             body: { password: 'test123' }.to_json,
+             headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+           )
            .to_return(
              status: 200,
-             body: "%PDF-1.4\nmasked",
+             body: "%PDF-1.4\nencrypted masked",
              headers: { 'content-type' => 'application/pdf' }
            )
   end
