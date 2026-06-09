@@ -42,6 +42,9 @@ section.document-section
               .table-actions
                 button.table-link-button type="button" data-version-download-button=true data-download-url="/attachments/#{attachment_id}/masked_attachments/#{masked_attachment.id}/encrypted_download" data-download-filename="encrypted_#{attachment_name}" Download
                 button.table-link-button type="button" disabled=true Share
+                form.inline-action-form method="post" action="/attachments/#{attachment_id}/masked_attachments/#{masked_attachment.id}/delete"
+                  button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this masked version?')"
+                    span.trash-icon aria-hidden="true"
 
 .scan-password-modal hidden=true data-version-password-modal=true role="dialog" aria-modal="true" aria-labelledby="version-password-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
   .scan-password-modal__backdrop data-version-password-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"

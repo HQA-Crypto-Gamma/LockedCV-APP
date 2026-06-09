@@ -39,6 +39,13 @@ module LockedCV
                 download_masked_pdf(routing, attachment_id, masked_attachment_id)
               end
             end
+
+            routing.on 'delete' do
+              # POST /attachments/[attachment_id]/masked_attachments/[masked_attachment_id]/delete
+              routing.post do
+                delete_masked_attachment(routing, attachment_id, masked_attachment_id)
+              end
+            end
           end
 
           # GET /attachments/[attachment_id]/masked_attachments
@@ -191,6 +198,29 @@ module LockedCV
     rescue DownloadMaskedPdf::ServiceUnavailableError => e
       App.logger.error "MASKED PDF DOWNLOAD FAILED: #{e.inspect}"
       preview_failed(routing, 'Could not download masked attachment', 502)
+    end
+
+    def delete_masked_attachment(routing, attachment_id, masked_attachment_id)
+      DeleteMaskedAttachment.new(App.config).call(
+        attachment_id:,
+        masked_attachment_id:,
+        auth_token: @current_account.auth_token
+      )
+
+      flash[:notice] = 'Masked attachment deleted'
+      routing.redirect "/attachments/#{attachment_id}/masked_attachments"
+    rescue DeleteMaskedAttachment::NotFoundError => e
+      delete_failed(routing, e, 'Masked attachment not found', :warn, "/attachments/#{attachment_id}/masked_attachments")
+    rescue DeleteMaskedAttachment::UnauthorizedError => e
+      delete_failed(routing, e, 'Please log in again before deleting', :warn, '/#login-modal')
+    rescue DeleteMaskedAttachment::ServiceUnavailableError => e
+      delete_failed(
+        routing,
+        e,
+        'Masked attachment delete is temporarily unavailable',
+        :error,
+        "/attachments/#{attachment_id}/masked_attachments"
+      )
     end
 
     def encrypted_download_password(routing)

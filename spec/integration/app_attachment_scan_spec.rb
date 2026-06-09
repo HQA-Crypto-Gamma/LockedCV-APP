@@ -179,6 +179,8 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download"
     _(last_response.body).must_include 'Set PDF password'
     _(last_response.body).must_include 'Download encrypted PDF'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
+    _(last_response.body).must_include 'Delete masked_resume.pdf'
     assert_requested(
       :get,
       "#{API_URL}/attachments/#{@attachment_id}/masked_attachments",
@@ -192,6 +194,30 @@ describe 'Attachment scan route' do
     _(last_response.status).must_equal 302
     _(last_response.location).must_match %r{/#login-modal$}
     assert_not_requested(:get, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments")
+  end
+
+  it 'HAPPY: deletes a saved masked PDF version for a logged-in account' do
+    stub_login
+    stub_masked_version_delete
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/attachments/#{@attachment_id}/masked_attachments$}
+    assert_requested(
+      :delete,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id",
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF version deletes without calling the API' do
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(:delete, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id")
   end
 
   it 'SECURITY: redirects guests to the login modal without calling the API' do
@@ -341,6 +367,19 @@ describe 'Attachment scan route' do
                  }
                ]
              }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_masked_version_delete
+    WebMock.stub_request(
+      :delete,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id"
+    )
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: { message: 'Masked attachment deleted' }.to_json,
              headers: { 'content-type' => 'application/json' }
            )
   end
