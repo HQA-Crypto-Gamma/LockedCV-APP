@@ -74,6 +74,30 @@ describe 'Masked attachment share flow' do
     _(last_response.body).wont_include 'Delete shared_masked_attachment'
   end
 
+  it 'HAPPY: lists masked PDFs shared with the logged-in account' do
+    stub_login
+    stub_shared_masked_attachment_list
+
+    post '/auth/login', username: 'grace-hopper', password: 'grace-secret'
+    get '/shared'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'Shared masked PDFs'
+    _(last_response.body).must_include 'masked_shared_resume.pdf'
+    _(last_response.body).must_include 'Shared masked PDF'
+    _(last_response.body).must_include '/shared/masked-attachments/attachment-id/masked-attachment-id'
+    _(last_response.body).must_include 'View'
+    _(last_response.body).wont_include 'owned_resume.pdf'
+    _(last_response.body).wont_include 'masked_not_shared.pdf'
+    _(last_response.body).wont_include 'data-version-download-button'
+    _(last_response.body).wont_include 'Delete shared_resume.pdf'
+    assert_requested(
+      :get,
+      "#{API_URL}/shared_masked_attachments",
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
   it 'HAPPY: returns the shared masked PDF inline for a logged-in account' do
     stub_login
     stub_view_shared_pdf
@@ -134,9 +158,35 @@ describe 'Masked attachment share flow' do
                  attributes: {
                    attachment_id: 'attachment-id',
                    masked_attachment_id: 'masked-attachment-id',
-                   role: 'viewer_masked'
+                  role: 'viewer'
+                }
+              }
+            }.to_json,
+            headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_shared_masked_attachment_list
+    WebMock.stub_request(:get, "#{API_URL}/shared_masked_attachments")
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: {
+               data: [
+                 {
+                   data: {
+                     attributes: {
+                       attachment_id: 'attachment-id',
+                       masked_attachment_id: 'masked-attachment-id',
+                       attachment_name: 'shared_resume.pdf',
+                       masked_attachment_name: 'masked_shared_resume.pdf',
+                       masked_items_count: 2,
+                       shared_at: '2026-06-09 21:45:04 +0800',
+                       created_at: '2026-06-09 21:44:04 +0800'
+                     }
+                   }
                  }
-               }
+               ]
              }.to_json,
              headers: { 'content-type' => 'application/json' }
            )

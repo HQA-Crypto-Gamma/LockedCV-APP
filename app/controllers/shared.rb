@@ -9,27 +9,46 @@ module LockedCV
     route('shared') do |routing|
       require_login!(routing)
 
-      routing.on 'masked-attachments', String, String do |attachment_id, masked_attachment_id|
-        routing.on 'pdf' do
-          # GET /shared/masked-attachments/[attachment_id]/[masked_attachment_id]/pdf
+      routing.on 'masked-attachments', String do |attachment_id|
+        routing.on String do |masked_attachment_id|
+          routing.on 'pdf' do
+            # GET /shared/masked-attachments/[attachment_id]/[masked_attachment_id]/pdf
+            routing.get do
+              view_shared_masked_pdf(routing, attachment_id, masked_attachment_id)
+            end
+          end
+
+          # GET /shared/masked-attachments/[attachment_id]/[masked_attachment_id]
           routing.get do
-            view_shared_masked_pdf(routing, attachment_id, masked_attachment_id)
+            view :shared_masked_attachment,
+                 locals: {
+                   current_account: @current_account,
+                   attachment_id:,
+                   masked_attachment_id:
+                 }
           end
         end
+      end
 
-        # GET /shared/masked-attachments/[attachment_id]/[masked_attachment_id]
-        routing.get do
-          view :shared_masked_attachment,
-               locals: {
-                 current_account: @current_account,
-                 attachment_id:,
-                 masked_attachment_id:
-               }
-        end
+      # GET /shared
+      routing.get do
+        shared_masked_attachments = list_shared_masked_attachments
+        view :shared_attachments,
+             locals: {
+               current_account: @current_account,
+               shared_masked_attachments:
+             }
       end
     end
 
     private
+
+    def list_shared_masked_attachments
+      ListSharedMaskedAttachments.new(App.config, current_account: @current_account).call
+    rescue ListSharedMaskedAttachments::ServiceUnavailableError => e
+      App.logger.warn "SHARED MASKED PDFS UNAVAILABLE: #{e.inspect}"
+      []
+    end
 
     def view_shared_masked_pdf(routing, attachment_id, masked_attachment_id)
       pdf_body = ViewMaskedPdf.new(App.config).call(

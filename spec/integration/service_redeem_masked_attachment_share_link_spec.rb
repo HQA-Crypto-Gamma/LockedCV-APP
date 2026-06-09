@@ -24,7 +24,7 @@ describe 'RedeemMaskedAttachmentShareLink service' do
                  attributes: {
                    attachment_id: 'attachment-id',
                    masked_attachment_id: 'masked-attachment-id',
-                   role: 'viewer_masked'
+                   role: 'viewer'
                  }
                }
              }.to_json,
@@ -38,7 +38,7 @@ describe 'RedeemMaskedAttachmentShareLink service' do
 
     _(redemption['attachment_id']).must_equal 'attachment-id'
     _(redemption['masked_attachment_id']).must_equal 'masked-attachment-id'
-    _(redemption['role']).must_equal 'viewer_masked'
+    _(redemption['role']).must_equal 'viewer'
   end
 
   it 'BAD: raises NotFoundError when the token is invalid' do
