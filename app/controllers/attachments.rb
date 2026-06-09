@@ -66,6 +66,16 @@ module LockedCV
           end
         end
       end
+
+      # GET /attachments
+      routing.get do
+        attachments = current_account_attachments
+        view 'attachment_history',
+             locals: {
+               current_account: @current_account,
+               attachments:
+             }
+      end
     end
 
     private

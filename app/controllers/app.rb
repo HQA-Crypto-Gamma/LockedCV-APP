@@ -38,8 +38,13 @@ module LockedCV
 
       # GET /
       routing.root do
-        attachments = current_account_attachments
-        view 'home', locals: { current_account: @current_account, attachments: }
+        attachments = current_account_attachments.first(3)
+        view 'home',
+             locals: {
+               current_account: @current_account,
+               attachments:,
+               document_history_limited: true
+             }
       end
     end
 

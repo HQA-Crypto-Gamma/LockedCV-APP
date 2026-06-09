@@ -35,6 +35,33 @@ describe 'Home flow' do
     _(last_response.body).wont_include 'Delete shared_resume.pdf'
   end
 
+  it 'HAPPY: shows only recent documents on home and all documents on the full history page' do
+    stub_login
+    stub_attachment_history(count: 4)
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    get '/'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'resume_1.pdf'
+    _(last_response.body).must_include 'resume_2.pdf'
+    _(last_response.body).must_include 'resume_3.pdf'
+    _(last_response.body).wont_include 'resume_4.pdf'
+    _(last_response.body).must_include 'href="/attachments"'
+
+    get '/attachments'
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'resume_1.pdf'
+    _(last_response.body).must_include 'resume_2.pdf'
+    _(last_response.body).must_include 'resume_3.pdf'
+    _(last_response.body).must_include 'resume_4.pdf'
+    _(last_response.body).must_include 'Back to recent'
+    _(last_response.body).must_include 'All uploaded files'
+    _(last_response.body).wont_include 'Upload a New document'
+    _(last_response.body).wont_include 'Your CV Vault'
+  end
+
   private
 
   def stub_login
@@ -70,6 +97,36 @@ describe 'Home flow' do
                    }
                  }
                ]
+             }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_attachment_history(count:)
+    WebMock.stub_request(:get, "#{API_URL}/attachments")
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: {
+               data: Array.new(count) do |index|
+                 number = index + 1
+                 {
+                   data: {
+                     attributes: {
+                       'id' => "attachment-#{number}",
+                       'attachment_name' => "resume_#{number}.pdf",
+                       'masked_attachments_count' => number,
+                       'created_at' => "2026-06-09 20:4#{number}:04 +0800"
+                     }
+                   },
+                   policy: {
+                     can_view: true,
+                     can_view_masked: true,
+                     can_delete: true,
+                     role: 'owner'
+                   }
+                 }
+               end
              }.to_json,
              headers: { 'content-type' => 'application/json' }
            )

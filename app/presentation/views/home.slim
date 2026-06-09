@@ -1,4 +1,5 @@
 - attachments ||= []
+- document_history_limited = true unless defined?(document_history_limited)
 
 - if current_account.logged_in?
   section.dashboard-hero
@@ -43,7 +44,10 @@
     .section-heading
       div
         h2 Document history
-      a.text-link href="#" View all
+      - if document_history_limited
+        a.text-link href="/attachments" View all
+      - else
+        a.text-link href="/" Back to recent
 
     .document-table-wrapper
       table.document-table
