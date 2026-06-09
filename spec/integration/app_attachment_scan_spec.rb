@@ -74,6 +74,27 @@ describe 'Attachment scan route' do
     )
   end
 
+  it 'SAD: returns JSON when masked PDF preview fails' do
+    stub_login
+    WebMock.stub_request(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/preview")
+           .to_return(
+             status: 500,
+             body: { message: 'Could not preview masked attachment' }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post(
+      "/attachments/#{@attachment_id}/masked_attachments/preview",
+      { selected_labels: %w[email tel] }.to_json,
+      'CONTENT_TYPE' => 'application/json'
+    )
+
+    _(last_response.status).must_equal 502
+    _(last_response.headers['Content-Type']).must_include 'application/json'
+    _(JSON.parse(last_response.body)).must_equal('message' => 'Could not preview masked attachment')
+  end
+
   it 'SECURITY: redirects guests away from masked PDF previews without calling the API' do
     post(
       "/attachments/#{@attachment_id}/masked_attachments/preview",

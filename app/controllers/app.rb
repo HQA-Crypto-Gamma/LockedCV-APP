@@ -7,6 +7,7 @@ require 'slim/include'
 module LockedCV
   # Base class for the LockedCV Web App
   class App < Roda
+    # Raised when a submitted web form does not satisfy its validation contract.
     class FormValidationError < StandardError
       attr_reader :errors, :values
 
@@ -23,6 +24,7 @@ module LockedCV
 
     plugin :render, engine: 'slim', views: 'app/presentation/views'
     plugin :assets, css: 'style.css', path: 'app/presentation/assets'
+    plugin :halt
     plugin :multi_route
     plugin :flash
 
