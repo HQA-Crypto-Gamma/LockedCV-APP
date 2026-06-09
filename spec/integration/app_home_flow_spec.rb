@@ -17,7 +17,7 @@ describe 'Home flow' do
     WebMock.reset!
   end
 
-  it 'HAPPY: labels masked shared attachments without delete actions' do
+  it 'HAPPY: keeps masked shared attachments out of document history' do
     stub_login
     stub_masked_attachment_list
 
@@ -25,13 +25,10 @@ describe 'Home flow' do
     get '/'
 
     _(last_response.status).must_equal 200
-    _(last_response.body).must_include 'shared_resume.pdf'
-    _(last_response.body).must_include 'Masked shared copy'
+    _(last_response.body).wont_include 'shared_resume.pdf'
+    _(last_response.body).wont_include 'Masked shared copy'
     _(last_response.body).must_include 'Masked versions'
-    _(last_response.body).must_include '2026-06-09 20:41:04 +0800'
     _(last_response.body).wont_include '<th>Risk</th>'
-    _(last_response.body).must_include '/attachments/shared-attachment-id/masked_attachments'
-    _(last_response.body).must_include 'version-count--link'
     _(last_response.body).wont_include 'Delete shared_resume.pdf'
   end
 

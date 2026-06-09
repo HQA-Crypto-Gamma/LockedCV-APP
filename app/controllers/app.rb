@@ -38,7 +38,7 @@ module LockedCV
 
       # GET /
       routing.root do
-        attachments = current_account_attachments.first(3)
+        attachments = current_account_owned_attachments.first(3)
         view 'home',
              locals: {
                current_account: @current_account,
@@ -57,6 +57,10 @@ module LockedCV
     rescue ListAttachments::ServiceUnavailableError => e
       App.logger.warn "ATTACHMENTS UNAVAILABLE: #{e.inspect}"
       []
+    end
+
+    def current_account_owned_attachments
+      current_account_attachments.select(&:owner?)
     end
 
     def require_login!(routing)
