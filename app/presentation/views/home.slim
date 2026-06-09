@@ -52,13 +52,12 @@
             th File
             th Uploaded
             th Status
-            th Risk
             th Masked versions
             th
         tbody
           - if attachments.empty?
             tr
-              td.empty-table colspan="6" No uploaded CV files yet.
+              td.empty-table colspan="5" No uploaded CV files yet.
           - attachments.each do |attachment|
             - attachment_name = attachment.attachment_name.to_s
             - extension = File.extname(attachment_name).delete('.').upcase
@@ -76,11 +75,10 @@
                       span Masked shared copy
                     - else
                       span Original retained privately
-              td = '-'
+              td
+                span.muted-value = attachment.uploaded_at
               td
                 span.status-pill.status-pill--saved Saved
-              td
-                span.muted-value -
               td
                 - if attachment.masked_versions?
                   a.version-count.version-count--link href="/attachments/#{attachment.id}/masked_attachments" = attachment.masked_attachments_count
