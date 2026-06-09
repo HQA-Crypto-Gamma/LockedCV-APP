@@ -175,6 +175,10 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include '3'
     _(last_response.body).must_include 'Download'
     _(last_response.body).must_include 'Share'
+    _(last_response.body).must_include 'data-version-download-button'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download"
+    _(last_response.body).must_include 'Set PDF password'
+    _(last_response.body).must_include 'Download encrypted PDF'
     assert_requested(
       :get,
       "#{API_URL}/attachments/#{@attachment_id}/masked_attachments",
