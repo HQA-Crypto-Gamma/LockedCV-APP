@@ -28,6 +28,7 @@ describe 'Home flow' do
     _(last_response.body).wont_include 'shared_resume.pdf'
     _(last_response.body).wont_include 'Masked shared copy'
     _(last_response.body).must_include 'Masked versions'
+    _(last_response.body).must_include 'href="/shared"'
     _(last_response.body).wont_include '<th>Risk</th>'
     _(last_response.body).wont_include 'Delete shared_resume.pdf'
   end
@@ -45,6 +46,7 @@ describe 'Home flow' do
     _(last_response.body).must_include 'resume_3.pdf'
     _(last_response.body).wont_include 'resume_4.pdf'
     _(last_response.body).must_include 'href="/attachments"'
+    _(last_response.body).must_include 'href="/shared"'
 
     get '/attachments'
 
@@ -54,6 +56,7 @@ describe 'Home flow' do
     _(last_response.body).must_include 'resume_3.pdf'
     _(last_response.body).must_include 'resume_4.pdf'
     _(last_response.body).must_include 'Back to recent'
+    _(last_response.body).must_include '<span>Shared</span>'
     _(last_response.body).must_include 'All uploaded files'
     _(last_response.body).wont_include 'Upload a New document'
     _(last_response.body).wont_include 'Your CV Vault'
