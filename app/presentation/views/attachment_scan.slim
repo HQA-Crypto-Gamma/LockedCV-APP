@@ -72,6 +72,17 @@ section.scan-final-actions hidden=true data-mask-confirm-panel=true style="displ
         button.button.button--secondary type="button" data-password-modal-close=true Cancel
         button.button type="submit" data-password-submit-button=true Download encrypted PDF
 
+.scan-password-modal hidden=true data-share-link-modal=true role="dialog" aria-modal="true" aria-labelledby="share-link-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
+  .scan-password-modal__backdrop data-share-link-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"
+  .scan-password-modal__dialog style="position: relative; z-index: 1; width: min(520px, 100%); padding: 26px; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 24px 70px rgb(29 38 48 / 24%);"
+    h2#share-link-modal-title style="margin: 0; font-size: 1.45rem;" Share masked PDF
+    p style="margin: 10px 0 18px; color: #4d5a64;" Anyone opening this link must sign in before accessing the masked PDF.
+    input type="text" readonly=true data-share-link-input=true style="box-sizing: border-box; width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #b7c0c7; border-radius: 6px;"
+    p.scan-preview-action-status hidden=true data-share-link-status=true style="margin: 8px 0 0;"
+    .scan-preview-actions style="justify-content: flex-end; margin-top: 18px;"
+      button.button.button--secondary type="button" data-share-link-modal-close=true Close
+      button.button type="button" data-share-link-copy-button=true Copy link
+
 javascript:
   (() => {
     const workspace = document.querySelector('.scan-workspace');
@@ -92,12 +103,18 @@ javascript:
     const createButton = document.querySelector('[data-create-pdf-button]');
     const savedActions = document.querySelector('[data-saved-mask-actions]');
     const downloadButton = document.querySelector('[data-download-mask-button]');
+    const shareButton = document.querySelector('[data-share-mask-button]');
     const passwordModal = document.querySelector('[data-password-modal]');
     const passwordForm = document.querySelector('[data-password-form]');
     const passwordInput = document.querySelector('[data-password-input]');
     const passwordError = document.querySelector('[data-password-error]');
     const passwordSubmitButton = document.querySelector('[data-password-submit-button]');
     const passwordCloseButtons = Array.from(document.querySelectorAll('[data-password-modal-close]'));
+    const shareModal = document.querySelector('[data-share-link-modal]');
+    const shareInput = document.querySelector('[data-share-link-input]');
+    const shareStatus = document.querySelector('[data-share-link-status]');
+    const shareCopyButton = document.querySelector('[data-share-link-copy-button]');
+    const shareCloseButtons = Array.from(document.querySelectorAll('[data-share-link-modal-close]'));
     const createStatus = document.querySelector('[data-create-pdf-status]');
     const reviewStatus = workspace.querySelector('[data-review-step-status]');
     const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
@@ -140,6 +157,34 @@ javascript:
 
       passwordModal.hidden = true;
       passwordModal.style.display = 'none';
+    };
+
+    const showShareModal = (shareUrl) => {
+      if (!shareModal || !shareInput) return;
+
+      shareInput.value = shareUrl;
+      shareModal.hidden = false;
+      shareModal.style.display = 'flex';
+      if (shareStatus) {
+        shareStatus.hidden = true;
+        shareStatus.textContent = '';
+      }
+      window.setTimeout(() => shareInput.select(), 0);
+    };
+
+    const hideShareModal = () => {
+      if (!shareModal) return;
+
+      shareModal.hidden = true;
+      shareModal.style.display = 'none';
+    };
+
+    const setShareStatus = (text, failed = false) => {
+      if (!shareStatus) return;
+
+      shareStatus.textContent = text;
+      shareStatus.hidden = false;
+      shareStatus.style.color = failed ? '#8d1f16' : '#146276';
     };
 
     const clearSavedState = () => {
@@ -316,6 +361,39 @@ javascript:
       });
     }
 
+    if (shareButton) {
+      shareButton.addEventListener('click', () => {
+        if (!workspace.dataset.maskedAttachmentId) return;
+
+        shareButton.disabled = true;
+        shareButton.textContent = 'Creating...';
+        fetch(`${createUrl}/${workspace.dataset.maskedAttachmentId}/share_links`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: '{}'
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error('Share link failed');
+            return response.json();
+          })
+          .then((payload) => {
+            showShareModal(payload.share_url);
+          })
+          .catch(() => {
+            showShareModal('');
+            setShareStatus('Could not create a share link.', true);
+          })
+          .finally(() => {
+            shareButton.disabled = false;
+            shareButton.textContent = 'Share';
+          });
+      });
+    }
+
     const downloadEncryptedPdf = (password) => {
       if (!downloadButton || !workspace.dataset.maskedAttachmentId) return;
 
@@ -374,9 +452,39 @@ javascript:
       });
     });
 
+    shareCloseButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        hideShareModal();
+      });
+    });
+
+    if (shareCopyButton) {
+      shareCopyButton.addEventListener('click', () => {
+        if (!shareInput || !shareInput.value) return;
+
+        const fallbackCopy = () => {
+          shareInput.select();
+          document.execCommand('copy');
+          setShareStatus('Copied.');
+        };
+
+        if (!navigator.clipboard) {
+          fallbackCopy();
+          return;
+        }
+
+        navigator.clipboard.writeText(shareInput.value)
+          .then(() => setShareStatus('Copied.'))
+          .catch(fallbackCopy);
+      });
+    }
+
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && passwordModal && !passwordModal.hidden) {
         hidePasswordModal();
+      }
+      if (event.key === 'Escape' && shareModal && !shareModal.hidden) {
+        hideShareModal();
       }
     });
 
