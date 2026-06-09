@@ -1,0 +1,260 @@
+- masked_attachments ||= []
+
+section.versions-hero
+  div
+    p.eyebrow Saved masks
+    h1 Masked versions
+  a.button.button--secondary href="/" Back to vault
+
+section.document-section
+  .section-heading
+    div
+      h2 Attachment #{attachment_id}
+
+  .document-table-wrapper
+    table.document-table.versions-table
+      thead
+        tr
+          th File
+          th Created
+          th Masked items
+          th Actions
+      tbody
+        - if masked_attachments.empty?
+          tr
+            td.empty-table colspan="4" No masked versions saved yet.
+        - masked_attachments.each do |masked_attachment|
+          - attachment_name = masked_attachment.attachment_name.to_s
+          - extension = File.extname(attachment_name).delete('.').upcase
+          - extension = 'PDF' if extension.empty?
+          tr
+            td
+              .file-cell
+                span.file-badge = extension
+                div
+                  strong = attachment_name
+                  span Saved masked PDF
+            td
+              span.muted-value = masked_attachment.created_at || '-'
+            td
+              span.version-count = masked_attachment.masked_items_count
+            td
+              .table-actions
+                button.table-link-button type="button" data-version-download-button=true data-download-url="/attachments/#{attachment_id}/masked_attachments/#{masked_attachment.id}/encrypted_download" data-download-filename="encrypted_#{attachment_name}" Download
+                button.table-link-button type="button" data-version-share-button=true data-share-url="/attachments/#{attachment_id}/masked_attachments/#{masked_attachment.id}/share_links" Share
+                form.inline-action-form method="post" action="/attachments/#{attachment_id}/masked_attachments/#{masked_attachment.id}/delete"
+                  button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this masked version?')"
+                    span.trash-icon aria-hidden="true"
+
+.scan-password-modal hidden=true data-version-password-modal=true role="dialog" aria-modal="true" aria-labelledby="version-password-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
+  .scan-password-modal__backdrop data-version-password-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"
+  .scan-password-modal__dialog style="position: relative; z-index: 1; width: min(440px, 100%); padding: 26px; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 24px 70px rgb(29 38 48 / 24%);"
+    h2#version-password-modal-title style="margin: 0; font-size: 1.45rem;" Set PDF password
+    p style="margin: 10px 0 18px; color: #4d5a64;" Set the password people will need to open this encrypted PDF.
+    form data-version-password-form=true
+      label.required-field for="version-encrypted-pdf-password" Password
+      input#version-encrypted-pdf-password type="password" autocomplete="new-password" data-version-password-input=true style="box-sizing: border-box; width: 100%; min-height: 42px; margin-top: 6px; padding: 8px 10px; border: 1px solid #b7c0c7; border-radius: 6px;"
+      p.scan-preview-action-status hidden=true data-version-password-error=true style="margin: 8px 0 0; color: #8d1f16;" Password is required.
+      .scan-preview-actions style="justify-content: flex-end; margin-top: 18px;"
+        button.button.button--secondary type="button" data-version-password-modal-close=true Cancel
+        button.button type="submit" data-version-password-submit-button=true Download encrypted PDF
+
+.scan-password-modal hidden=true data-share-link-modal=true role="dialog" aria-modal="true" aria-labelledby="share-link-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
+  .scan-password-modal__backdrop data-share-link-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"
+  .scan-password-modal__dialog style="position: relative; z-index: 1; width: min(520px, 100%); padding: 26px; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 24px 70px rgb(29 38 48 / 24%);"
+    h2#share-link-modal-title style="margin: 0; font-size: 1.45rem;" Share masked PDF
+    p style="margin: 10px 0 18px; color: #4d5a64;" Anyone opening this link must sign in before accessing the masked PDF.
+    input type="text" readonly=true data-share-link-input=true style="box-sizing: border-box; width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #b7c0c7; border-radius: 6px;"
+    p.scan-preview-action-status hidden=true data-share-link-status=true style="margin: 8px 0 0;"
+    .scan-preview-actions style="justify-content: flex-end; margin-top: 18px;"
+      button.button.button--secondary type="button" data-share-link-modal-close=true Close
+      button.button type="button" data-share-link-copy-button=true Copy link
+
+javascript:
+  (() => {
+    const downloadButtons = Array.from(document.querySelectorAll('[data-version-download-button]'));
+    const passwordModal = document.querySelector('[data-version-password-modal]');
+    const passwordForm = document.querySelector('[data-version-password-form]');
+    const passwordInput = document.querySelector('[data-version-password-input]');
+    const passwordError = document.querySelector('[data-version-password-error]');
+    const passwordSubmitButton = document.querySelector('[data-version-password-submit-button]');
+    const closeButtons = Array.from(document.querySelectorAll('[data-version-password-modal-close]'));
+    if (!downloadButtons.length || !passwordModal || !passwordForm || !passwordInput) return;
+
+    let activeDownloadUrl = '';
+    let activeDownloadFilename = 'encrypted_masked_attachment.pdf';
+
+    const showPasswordModal = (button) => {
+      activeDownloadUrl = button.dataset.downloadUrl || '';
+      activeDownloadFilename = button.dataset.downloadFilename || activeDownloadFilename;
+      passwordModal.hidden = false;
+      passwordModal.style.display = 'flex';
+      if (passwordError) passwordError.hidden = true;
+      passwordInput.value = '';
+      window.setTimeout(() => passwordInput.focus(), 0);
+    };
+
+    const hidePasswordModal = () => {
+      passwordModal.hidden = true;
+      passwordModal.style.display = 'none';
+    };
+
+    const setSubmitLoading = (loading) => {
+      if (!passwordSubmitButton) return;
+
+      passwordSubmitButton.disabled = loading;
+      passwordSubmitButton.textContent = loading ? 'Downloading...' : 'Download encrypted PDF';
+    };
+
+    const downloadBlob = (blob) => {
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = activeDownloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    };
+
+    downloadButtons.forEach((button) => {
+      button.addEventListener('click', () => showPasswordModal(button));
+    });
+
+    closeButtons.forEach((button) => {
+      button.addEventListener('click', hidePasswordModal);
+    });
+
+    passwordForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const password = passwordInput.value.trim();
+      if (!password) {
+        if (passwordError) passwordError.hidden = false;
+        return;
+      }
+
+      setSubmitLoading(true);
+      if (passwordError) passwordError.hidden = true;
+
+      fetch(activeDownloadUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/pdf',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error('Download failed');
+          return response.blob();
+        })
+        .then((blob) => {
+          downloadBlob(blob);
+          hidePasswordModal();
+        })
+        .catch(() => {
+          if (passwordError) {
+            passwordError.textContent = 'Could not download this PDF.';
+            passwordError.hidden = false;
+          }
+        })
+        .finally(() => {
+          setSubmitLoading(false);
+        });
+    });
+  })();
+
+  (() => {
+    const shareButtons = Array.from(document.querySelectorAll('[data-version-share-button]'));
+    const shareModal = document.querySelector('[data-share-link-modal]');
+    const shareInput = document.querySelector('[data-share-link-input]');
+    const shareStatus = document.querySelector('[data-share-link-status]');
+    const copyButton = document.querySelector('[data-share-link-copy-button]');
+    const closeButtons = Array.from(document.querySelectorAll('[data-share-link-modal-close]'));
+    if (!shareButtons.length || !shareModal || !shareInput) return;
+
+    const showShareModal = (shareUrl) => {
+      shareInput.value = shareUrl;
+      shareModal.hidden = false;
+      shareModal.style.display = 'flex';
+      if (shareStatus) {
+        shareStatus.hidden = true;
+        shareStatus.textContent = '';
+      }
+      window.setTimeout(() => shareInput.select(), 0);
+    };
+
+    const hideShareModal = () => {
+      shareModal.hidden = true;
+      shareModal.style.display = 'none';
+    };
+
+    const setShareStatus = (text, failed = false) => {
+      if (!shareStatus) return;
+
+      shareStatus.textContent = text;
+      shareStatus.hidden = false;
+      shareStatus.style.color = failed ? '#8d1f16' : '#146276';
+    };
+
+    shareButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const shareUrl = button.dataset.shareUrl;
+        if (!shareUrl) return;
+
+        button.disabled = true;
+        button.textContent = 'Creating...';
+        fetch(shareUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: '{}'
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error('Share link failed');
+            return response.json();
+          })
+          .then((payload) => {
+            showShareModal(payload.share_url);
+          })
+          .catch(() => {
+            showShareModal('');
+            setShareStatus('Could not create a share link.', true);
+          })
+          .finally(() => {
+            button.disabled = false;
+            button.textContent = 'Share';
+          });
+      });
+    });
+
+    closeButtons.forEach((button) => {
+      button.addEventListener('click', hideShareModal);
+    });
+
+    if (copyButton) {
+      copyButton.addEventListener('click', () => {
+        const value = shareInput.value;
+        if (!value) return;
+
+        const fallbackCopy = () => {
+          shareInput.select();
+          document.execCommand('copy');
+          setShareStatus('Copied.');
+        };
+
+        if (!navigator.clipboard) {
+          fallbackCopy();
+          return;
+        }
+
+        navigator.clipboard.writeText(value)
+          .then(() => setShareStatus('Copied.'))
+          .catch(fallbackCopy);
+      });
+    }
+  })();

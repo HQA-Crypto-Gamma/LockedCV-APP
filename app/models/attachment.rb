@@ -18,6 +18,22 @@ module LockedCV
       attributes['attachment_name']
     end
 
+    def masked_attachments_count
+      attributes.fetch('masked_attachments_count', 0).to_i
+    end
+
+    def masked_versions?
+      masked_attachments_count.positive?
+    end
+
+    def created_at
+      attributes['created_at']
+    end
+
+    def uploaded_at
+      created_at || '-'
+    end
+
     def role
       policy['role']
     end

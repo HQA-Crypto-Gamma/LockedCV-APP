@@ -390,9 +390,40 @@ button:disabled {
 }
 
 .text-link,
-.table-action {
+.table-action,
+.table-link,
+.table-link-button {
   font-weight: 700;
   text-decoration: none;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.table-link,
+.table-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #146276;
+  border-radius: 6px;
+  color: #146276;
+  background: #ffffff;
+  font-size: 0.9rem;
+}
+
+.table-link-button:disabled {
+  border-color: #d9e0e5;
+  color: #66727d;
+  background: #f3f6f7;
+  cursor: not-allowed;
 }
 
 .inline-action-form {
@@ -485,8 +516,21 @@ button:disabled {
 }
 
 .file-cell strong,
-.file-cell span {
+.file-cell span,
+.file-name-link {
   display: block;
+}
+
+.file-name-link {
+  color: #1d2630;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.file-name-link:hover {
+  color: #146276;
+  text-decoration: underline;
 }
 
 .file-cell span:not(.file-badge) {
@@ -508,7 +552,8 @@ button:disabled {
 }
 
 .status-pill,
-.risk-label {
+.risk-label,
+.version-count {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
@@ -538,9 +583,40 @@ button:disabled {
   background: #e8eef2;
 }
 
+.version-count {
+  color: #146276;
+  background: #e8eef2;
+}
+
+.version-count--link {
+  text-decoration: none;
+}
+
+.version-count--link:hover {
+  background: #d8e7ed;
+}
+
 .muted-value,
 .empty-table {
   color: #66727d;
+}
+
+.versions-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.versions-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+}
+
+.versions-table {
+  min-width: 760px;
 }
 
 .empty-table {

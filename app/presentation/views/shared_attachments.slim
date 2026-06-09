@@ -1,0 +1,43 @@
+- shared_masked_attachments ||= []
+
+section.versions-hero
+  div
+    p.eyebrow Shared with me
+    h1 Shared masked PDFs
+  a.button.button--secondary href="/" Back to vault
+
+section.document-section
+  .section-heading
+    div
+      h2 View-only files
+
+  .document-table-wrapper
+    table.document-table
+      thead
+        tr
+          th File
+          th Shared
+          th Masked items
+          th
+      tbody
+        - if shared_masked_attachments.empty?
+          tr
+            td.empty-table colspan="4" No shared masked PDFs yet.
+        - shared_masked_attachments.each do |shared_masked_attachment|
+          - attachment_name = shared_masked_attachment.display_name.to_s
+          - extension = File.extname(attachment_name).delete('.').upcase
+          - extension = 'PDF' if extension.empty?
+          tr
+            td
+              .file-cell
+                span.file-badge = extension
+                div
+                  strong = attachment_name
+                  span Shared masked PDF
+            td
+              span.muted-value = shared_masked_attachment.shared_at
+            td
+              span.version-count = shared_masked_attachment.masked_items_count
+            td
+              .table-actions
+                a.table-link-button href="/shared/masked-attachments/#{shared_masked_attachment.attachment_id}/#{shared_masked_attachment.masked_attachment_id}" View
