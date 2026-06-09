@@ -33,9 +33,9 @@ module LockedCV
           end
 
           routing.on String do |masked_attachment_id|
-            routing.on 'download' do
-              # GET /attachments/[attachment_id]/masked_attachments/[masked_attachment_id]/download
-              routing.get do
+            routing.on 'encrypted_download' do
+              # POST /attachments/[attachment_id]/masked_attachments/[masked_attachment_id]/encrypted_download
+              routing.post do
                 download_masked_pdf(routing, attachment_id, masked_attachment_id)
               end
             end
@@ -150,12 +150,15 @@ module LockedCV
       pdf_body = DownloadMaskedPdf.new(App.config).call(
         attachment_id:,
         masked_attachment_id:,
-        auth_token: @current_account.auth_token
+        auth_token: @current_account.auth_token,
+        password: encrypted_download_password(routing)
       )
 
       routing.response['Content-Type'] = 'application/pdf'
-      routing.response['Content-Disposition'] = 'attachment; filename="masked_attachment.pdf"'
+      routing.response['Content-Disposition'] = 'attachment; filename="encrypted_masked_attachment.pdf"'
       pdf_body
+    rescue JSON::ParserError, DownloadMaskedPdf::ValidationError
+      preview_failed(routing, 'Password is required', 400)
     rescue DownloadMaskedPdf::NotFoundError
       preview_failed(routing, 'Masked attachment not found', 404)
     rescue DownloadMaskedPdf::UnauthorizedError
@@ -163,6 +166,14 @@ module LockedCV
     rescue DownloadMaskedPdf::ServiceUnavailableError => e
       App.logger.error "MASKED PDF DOWNLOAD FAILED: #{e.inspect}"
       preview_failed(routing, 'Could not download masked attachment', 502)
+    end
+
+    def encrypted_download_password(routing)
+      request_data = JSON.parse(routing.body.read)
+      password = request_data.fetch('password') { nil }.to_s
+      raise DownloadMaskedPdf::ValidationError if password.strip.empty?
+
+      password
     end
 
     def masked_pdf_selected_labels(routing)
