@@ -54,5 +54,5 @@ section.document-section
               .table-actions
                 - if attachment.can_delete?
                   form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
-                    button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
+                    button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" data-confirm-message="Delete this file?"
                       span.trash-icon aria-hidden="true"

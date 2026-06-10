@@ -23,10 +23,15 @@ module LockedCV
     end
 
     plugin :render, engine: 'slim', views: 'app/presentation/views'
-    plugin :assets, css: 'style.css', path: 'app/presentation/assets'
+    plugin :assets, css: 'style.css', js: 'app.js', path: 'app/presentation/assets'
     plugin :halt
     plugin :multi_route
     plugin :flash
+    plugin :hooks
+
+    after do |response|
+      BrowserSecurity.apply_headers(response)
+    end
 
     route do |routing|
       response['Content-Type'] = 'text/html; charset=utf-8'

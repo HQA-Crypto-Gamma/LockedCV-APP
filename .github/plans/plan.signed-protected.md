@@ -220,3 +220,24 @@ docs: document signed request deployment setup
 refactor: move inline browser code into app assets
 feat: enforce browser security headers
 ```
+
+## 完成狀態更新（2026-06-11）
+
+- Request signing 已完成：pre-login API services 使用 `SignedMessage.sign(...)` 包 body。
+- Google OAuth state regression 已存在；本次未重做 OAuth flow。
+- Browser security 已完成：
+  - 新增 `app/controllers/security.rb`。
+  - 每個 App response 套用 security headers。
+  - 新增 `POST /security/report_csp_violation`。
+  - session cookie 設定 `httponly`、`same_site: :lax`，production 加 `secure: true`。
+- CSP compliance 已完成：
+  - Layout 載入 self-hosted `app.js`。
+  - `home.slim` upload JS 移到 asset。
+  - `attachment_scan.slim` preview/create/share/download JS 移到 asset。
+  - `masked_attachments.slim` encrypted download/share JS 移到 asset。
+  - inline `style=` 移到 CSS class。
+  - delete confirm 從 `onclick` 改成 data attribute，由 `app.js` 綁定。
+  - CSP 已移除 `'unsafe-inline'`。
+- Third-party asset audit 已完成：
+  - views/assets 沒有 CDN scripts/styles/fonts。
+  - 目前沒有 SRI 要加；未來若新增第三方 browser asset，需要加 `integrity`、`crossorigin` 和 CSP allowlist。

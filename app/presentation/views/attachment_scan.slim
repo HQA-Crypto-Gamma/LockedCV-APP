@@ -1,7 +1,7 @@
 - field_labels = { 'first_name' => 'First name', 'last_name' => 'Last name', 'email' => 'Email', 'phone_number' => 'Phone number', 'birthday' => 'Birthday', 'address' => 'Address', 'identification_number' => 'ID number', 'identification_numbers' => 'ID numbers' }
 - mask_fields = [{ label: 'Name', value: 'name', types: %w[first_name last_name full_name name] }, { label: 'Email', value: 'email', types: %w[email] }, { label: 'Phone', value: 'tel', types: %w[phone phone_number tel] }, { label: 'ID Number', value: 'id', types: %w[identification_number identification_numbers id id_number] }, { label: 'Birthday', value: 'birthday', types: %w[birthday] }, { label: 'Address', value: 'address', types: %w[address] }]
 
-section.scan-hero style="width: min(calc(100vw - 48px), 1480px); margin-left: 50%; transform: translateX(-50%);"
+section.scan-hero.scan-hero--wide
   div
     p.eyebrow Scan preview
     h1 data-scan-page-title=true Mask Review
@@ -9,22 +9,22 @@ section.scan-hero style="width: min(calc(100vw - 48px), 1480px); margin-left: 50
     span Detected fields
     strong = scan_result.match_count
 
-section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview" data-pdf-create-url="/attachments/#{scan_result.attachment_id}/masked_attachments" style="width: min(calc(100vw - 48px), 1480px); margin-left: 50%; transform: translateX(-50%); --scan-panel-height: clamp(720px, calc(100vh - 130px), 920px); grid-template-columns: minmax(0, 2fr) minmax(380px, 0.78fr); align-items: stretch;"
-  .scan-preview-panel style="height: var(--scan-panel-height);"
+section.scan-workspace.scan-workspace--wide.scan-workspace--review aria-label="Attachment scan workspace" data-pdf-preview-url="/attachments/#{scan_result.attachment_id}/masked_attachments/preview" data-pdf-create-url="/attachments/#{scan_result.attachment_id}/masked_attachments"
+  .scan-preview-panel
     .scan-panel-heading
       div
         p.panel-kicker Preview
         h2 data-scan-preview-title=true Masked PDF
       span.status-pill.status-pill--masked Ready
-    iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" style="width: 100%; height: calc(var(--scan-panel-height) - 92px); min-height: 0;" data-pdf-preview-frame=true
+    iframe.scan-pdf-preview title="Masked PDF preview" width="100%" height="720" data-pdf-preview-frame=true
 
-  aside.scan-fields-panel data-mask-fields-panel=true style="height: var(--scan-panel-height); display: flex; flex-direction: column; min-height: 0;"
-    .scan-review-step data-mask-review-panel=true style="display: flex; flex: 1; flex-direction: column; min-height: 0;"
+  aside.scan-fields-panel data-mask-fields-panel=true
+    .scan-review-step data-mask-review-panel=true
       .scan-panel-heading
         div
           p.panel-kicker Review
           h2 Mask fields
-      ul.scan-mask-label-list style="flex: 1; min-height: 0; overflow: auto; padding-right: 6px;"
+      ul.scan-mask-label-list
         - mask_fields.each do |mask_field|
           - field_matches = scan_result.matches.select { |match| mask_field[:types].include?(match['type'].to_s) }
           - detected = field_matches.any?
@@ -48,449 +48,37 @@ section.scan-workspace aria-label="Attachment scan workspace" data-pdf-preview-u
                       small = source.tr('_', ' ')
               - else
                 p.scan-mask-field-empty Not detected in this attachment.
-      .scan-preview-actions style="display: flex; flex: 0 0 auto; justify-content: flex-end; width: 100%; margin-top: auto; padding-top: 14px; border-top: 1px solid #d9e0e5;"
+      .scan-preview-actions.scan-preview-actions--bottom
         button.button type="button" data-next-mask-step-button=true Next
 
-section.scan-final-actions hidden=true data-mask-confirm-panel=true style="display: none;"
-  button.button.button--secondary type="button" data-back-mask-step-button=true Back
-  button.button type="button" data-create-pdf-button=true Confirm and save
-  .scan-saved-actions hidden=true data-saved-mask-actions=true style="display: none; flex-direction: column; gap: 10px; align-items: stretch; position: fixed; right: 28px; bottom: 24px; z-index: 20;"
-    button.button.button--secondary type="button" data-share-mask-button=true style="min-width: 132px;" Share
-    button.button type="button" data-download-mask-button=true style="min-width: 132px;" Download
+section.scan-final-actions hidden=true data-mask-confirm-panel=true
+  button.button.button--secondary.scan-fixed-action.scan-fixed-action--left type="button" data-back-mask-step-button=true Back
+  button.button.scan-fixed-action.scan-fixed-action--right type="button" data-create-pdf-button=true Confirm and save
+  .scan-saved-actions hidden=true data-saved-mask-actions=true
+    button.button.button--secondary.scan-action-wide type="button" data-share-mask-button=true Share
+    button.button.scan-action-wide type="button" data-download-mask-button=true Download
   span.scan-preview-action-status hidden=true data-create-pdf-status=true
 
-.scan-password-modal hidden=true data-password-modal=true role="dialog" aria-modal="true" aria-labelledby="password-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
-  .scan-password-modal__backdrop data-password-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"
-  .scan-password-modal__dialog style="position: relative; z-index: 1; width: min(440px, 100%); padding: 26px; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 24px 70px rgb(29 38 48 / 24%);"
-    h2#password-modal-title style="margin: 0; font-size: 1.45rem;" Set PDF password
-    p style="margin: 10px 0 18px; color: #4d5a64;" Set the password people will need to open this encrypted PDF.
+.scan-password-modal hidden=true data-password-modal=true role="dialog" aria-modal="true" aria-labelledby="password-modal-title"
+  .scan-password-modal__backdrop data-password-modal-close=true
+  .scan-password-modal__dialog
+    h2#password-modal-title Set PDF password
+    p.scan-password-modal__copy Set the password people will need to open this encrypted PDF.
     form data-password-form=true
       label.required-field for="encrypted-pdf-password" Password
-      input#encrypted-pdf-password type="password" autocomplete="new-password" data-password-input=true style="box-sizing: border-box; width: 100%; min-height: 42px; margin-top: 6px; padding: 8px 10px; border: 1px solid #b7c0c7; border-radius: 6px;"
-      p.scan-preview-action-status hidden=true data-password-error=true style="margin: 8px 0 0; color: #8d1f16;" Password is required.
-      .scan-preview-actions style="justify-content: flex-end; margin-top: 18px;"
+      input#encrypted-pdf-password type="password" autocomplete="new-password" data-password-input=true
+      p.scan-preview-action-status.scan-preview-action-status--error hidden=true data-password-error=true Password is required.
+      .scan-preview-actions.scan-preview-actions--end
         button.button.button--secondary type="button" data-password-modal-close=true Cancel
         button.button type="submit" data-password-submit-button=true Download encrypted PDF
 
-.scan-password-modal hidden=true data-share-link-modal=true role="dialog" aria-modal="true" aria-labelledby="share-link-modal-title" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px;"
-  .scan-password-modal__backdrop data-share-link-modal-close=true style="position: absolute; inset: 0; background: rgb(29 38 48 / 48%);"
-  .scan-password-modal__dialog style="position: relative; z-index: 1; width: min(520px, 100%); padding: 26px; border: 1px solid #d9e0e5; border-radius: 8px; background: #ffffff; box-shadow: 0 24px 70px rgb(29 38 48 / 24%);"
-    h2#share-link-modal-title style="margin: 0; font-size: 1.45rem;" Share masked PDF
-    p style="margin: 10px 0 18px; color: #4d5a64;" Anyone opening this link must sign in before accessing the masked PDF.
-    input type="text" readonly=true data-share-link-input=true style="box-sizing: border-box; width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid #b7c0c7; border-radius: 6px;"
-    p.scan-preview-action-status hidden=true data-share-link-status=true style="margin: 8px 0 0;"
-    .scan-preview-actions style="justify-content: flex-end; margin-top: 18px;"
+.scan-password-modal hidden=true data-share-link-modal=true role="dialog" aria-modal="true" aria-labelledby="share-link-modal-title"
+  .scan-password-modal__backdrop data-share-link-modal-close=true
+  .scan-password-modal__dialog.scan-password-modal__dialog--wide
+    h2#share-link-modal-title Share masked PDF
+    p.scan-password-modal__copy Anyone opening this link must sign in before accessing the masked PDF.
+    input type="text" readonly=true data-share-link-input=true
+    p.scan-preview-action-status hidden=true data-share-link-status=true
+    .scan-preview-actions.scan-preview-actions--end
       button.button.button--secondary type="button" data-share-link-modal-close=true Close
       button.button type="button" data-share-link-copy-button=true Copy link
-
-javascript:
-  (() => {
-    const workspace = document.querySelector('.scan-workspace');
-    if (!workspace) return;
-
-    const previewUrl = workspace.dataset.pdfPreviewUrl;
-    const createUrl = workspace.dataset.pdfCreateUrl;
-    const previewFrame = workspace.querySelector('[data-pdf-preview-frame]');
-    const status = workspace.querySelector('.status-pill');
-    const pageTitle = document.querySelector('[data-scan-page-title]');
-    const previewTitle = workspace.querySelector('[data-scan-preview-title]');
-    const heroMeta = document.querySelector('[data-scan-hero-meta]');
-    const fieldsPanel = workspace.querySelector('[data-mask-fields-panel]');
-    const reviewPanel = workspace.querySelector('[data-mask-review-panel]');
-    const confirmPanel = document.querySelector('[data-mask-confirm-panel]');
-    const nextButton = workspace.querySelector('[data-next-mask-step-button]');
-    const backButton = document.querySelector('[data-back-mask-step-button]');
-    const createButton = document.querySelector('[data-create-pdf-button]');
-    const savedActions = document.querySelector('[data-saved-mask-actions]');
-    const downloadButton = document.querySelector('[data-download-mask-button]');
-    const shareButton = document.querySelector('[data-share-mask-button]');
-    const passwordModal = document.querySelector('[data-password-modal]');
-    const passwordForm = document.querySelector('[data-password-form]');
-    const passwordInput = document.querySelector('[data-password-input]');
-    const passwordError = document.querySelector('[data-password-error]');
-    const passwordSubmitButton = document.querySelector('[data-password-submit-button]');
-    const passwordCloseButtons = Array.from(document.querySelectorAll('[data-password-modal-close]'));
-    const shareModal = document.querySelector('[data-share-link-modal]');
-    const shareInput = document.querySelector('[data-share-link-input]');
-    const shareStatus = document.querySelector('[data-share-link-status]');
-    const shareCopyButton = document.querySelector('[data-share-link-copy-button]');
-    const shareCloseButtons = Array.from(document.querySelectorAll('[data-share-link-modal-close]'));
-    const createStatus = document.querySelector('[data-create-pdf-status]');
-    const reviewStatus = workspace.querySelector('[data-review-step-status]');
-    const checkboxes = Array.from(workspace.querySelectorAll('[data-mask-label-checkbox]'));
-    if (!previewUrl || !previewFrame || checkboxes.length === 0) return;
-
-    let debounceTimer;
-    let currentPdfUrl;
-    let requestId = 0;
-
-    const selectedLabels = () => checkboxes
-      .filter((checkbox) => checkbox.checked)
-      .map((checkbox) => checkbox.value);
-
-    const setStatus = (text) => {
-      if (status) status.textContent = text;
-    };
-
-    const setCreateStatus = (text) => {
-      if (createStatus) createStatus.textContent = text;
-    };
-
-    const setReviewStatus = (text) => {
-      if (reviewStatus) reviewStatus.textContent = text;
-    };
-
-    const showPasswordModal = () => {
-      if (!passwordModal) return;
-
-      passwordModal.hidden = false;
-      passwordModal.style.display = 'flex';
-      if (passwordError) passwordError.hidden = true;
-      if (passwordInput) {
-        passwordInput.value = '';
-        window.setTimeout(() => passwordInput.focus(), 0);
-      }
-    };
-
-    const hidePasswordModal = () => {
-      if (!passwordModal) return;
-
-      passwordModal.hidden = true;
-      passwordModal.style.display = 'none';
-    };
-
-    const showShareModal = (shareUrl) => {
-      if (!shareModal || !shareInput) return;
-
-      shareInput.value = shareUrl;
-      shareModal.hidden = false;
-      shareModal.style.display = 'flex';
-      if (shareStatus) {
-        shareStatus.hidden = true;
-        shareStatus.textContent = '';
-      }
-      window.setTimeout(() => shareInput.select(), 0);
-    };
-
-    const hideShareModal = () => {
-      if (!shareModal) return;
-
-      shareModal.hidden = true;
-      shareModal.style.display = 'none';
-    };
-
-    const setShareStatus = (text, failed = false) => {
-      if (!shareStatus) return;
-
-      shareStatus.textContent = text;
-      shareStatus.hidden = false;
-      shareStatus.style.color = failed ? '#8d1f16' : '#146276';
-    };
-
-    const clearSavedState = () => {
-      delete workspace.dataset.maskedAttachmentId;
-      delete workspace.dataset.maskedAttachmentName;
-      setCreateStatus('Not saved');
-      if (createButton) {
-        createButton.hidden = false;
-        createButton.style.display = 'inline-flex';
-      }
-      if (savedActions) {
-        savedActions.hidden = true;
-        savedActions.style.display = 'none';
-      }
-    };
-
-    const showReviewStep = () => {
-      if (reviewPanel) reviewPanel.hidden = false;
-      if (fieldsPanel) {
-        fieldsPanel.hidden = false;
-        fieldsPanel.style.display = 'flex';
-      }
-      if (confirmPanel) {
-        confirmPanel.hidden = true;
-        confirmPanel.style.display = 'none';
-      }
-      if (backButton) backButton.style.cssText = '';
-      if (createButton) createButton.style.cssText = '';
-      if (savedActions) {
-        savedActions.hidden = true;
-        savedActions.style.display = 'none';
-      }
-      workspace.style.gridTemplateColumns = 'minmax(0, 2fr) minmax(380px, 0.78fr)';
-      workspace.style.width = 'min(calc(100vw - 48px), 1480px)';
-      if (pageTitle) pageTitle.textContent = 'Mask Review';
-      if (previewTitle) previewTitle.textContent = 'Masked PDF';
-      if (heroMeta) heroMeta.hidden = false;
-      setReviewStatus('Review the preview before saving.');
-    };
-
-    const showConfirmStep = () => {
-      if (reviewPanel) reviewPanel.hidden = true;
-      if (fieldsPanel) {
-        fieldsPanel.hidden = true;
-        fieldsPanel.style.display = 'none';
-      }
-      if (confirmPanel) {
-        confirmPanel.hidden = false;
-        confirmPanel.style.display = 'contents';
-      }
-      workspace.style.gridTemplateColumns = 'minmax(0, 1fr)';
-      workspace.style.width = 'min(calc(100vw - 220px), 1320px)';
-      if (backButton) {
-        backButton.style.cssText = 'position: fixed; left: 28px; bottom: 24px; z-index: 20;';
-      }
-      if (createButton && !workspace.dataset.maskedAttachmentId) {
-        createButton.hidden = false;
-        createButton.style.cssText = 'display: inline-flex; position: fixed; right: 28px; bottom: 24px; z-index: 20;';
-      }
-      if (savedActions && workspace.dataset.maskedAttachmentId) {
-        createButton.hidden = true;
-        createButton.style.display = 'none';
-        savedActions.hidden = false;
-        savedActions.style.display = 'flex';
-      }
-      if (pageTitle) pageTitle.textContent = 'Confirm Masked PDF';
-      if (previewTitle) previewTitle.textContent = 'Final masked PDF';
-      if (heroMeta) heroMeta.hidden = true;
-      if (workspace.dataset.maskedAttachmentId) {
-        setCreateStatus(workspace.dataset.maskedAttachmentName ? `Saved ${workspace.dataset.maskedAttachmentName}` : 'Saved');
-      } else {
-        setCreateStatus('Not saved');
-      }
-    };
-
-    const updatePreview = () => {
-      const currentRequest = requestId + 1;
-      requestId = currentRequest;
-      setStatus('Updating');
-
-      fetch(previewUrl, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Accept': 'application/pdf',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ selected_labels: selectedLabels() })
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error('Preview failed');
-          return response.blob();
-        })
-        .then((pdfBlob) => {
-          if (currentRequest !== requestId) return;
-          if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
-          currentPdfUrl = URL.createObjectURL(pdfBlob);
-          previewFrame.src = `${currentPdfUrl}#toolbar=0&navpanes=0&scrollbar=1`;
-          setStatus('Ready');
-          setReviewStatus('Review the preview before saving.');
-        })
-        .catch(() => {
-          if (currentRequest !== requestId) return;
-          setStatus('Error');
-          setReviewStatus('Preview failed.');
-        });
-    };
-
-    checkboxes.forEach((checkbox) => {
-      checkbox.addEventListener('change', () => {
-        window.clearTimeout(debounceTimer);
-        debounceTimer = window.setTimeout(updatePreview, 350);
-        clearSavedState();
-        setReviewStatus('Preview updating.');
-      });
-    });
-
-    if (nextButton) {
-      nextButton.addEventListener('click', () => {
-        showConfirmStep();
-      });
-    }
-
-    if (backButton) {
-      backButton.addEventListener('click', () => {
-        showReviewStep();
-      });
-    }
-
-    if (createButton && createUrl) {
-      createButton.addEventListener('click', () => {
-        createButton.disabled = true;
-        setCreateStatus('Saving');
-
-        fetch(createUrl, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ selected_labels: selectedLabels() })
-        })
-          .then((response) => {
-            if (!response.ok) throw new Error('Create failed');
-            return response.json();
-          })
-          .then((payload) => {
-            workspace.dataset.maskedAttachmentId = payload.masked_attachment_id || '';
-            workspace.dataset.maskedAttachmentName = payload.attachment_name || '';
-            setCreateStatus(payload.attachment_name ? `Saved ${payload.attachment_name}` : 'Saved');
-            createButton.hidden = true;
-            createButton.style.display = 'none';
-            if (savedActions) {
-              savedActions.hidden = false;
-              savedActions.style.display = 'flex';
-            }
-            setStatus('Saved');
-          })
-          .catch(() => {
-            setCreateStatus('Error');
-          })
-          .finally(() => {
-            createButton.disabled = false;
-          });
-      });
-    }
-
-    if (downloadButton) {
-      downloadButton.addEventListener('click', () => {
-        if (!workspace.dataset.maskedAttachmentId) return;
-
-        showPasswordModal();
-      });
-    }
-
-    if (shareButton) {
-      shareButton.addEventListener('click', () => {
-        if (!workspace.dataset.maskedAttachmentId) return;
-
-        shareButton.disabled = true;
-        shareButton.textContent = 'Creating...';
-        fetch(`${createUrl}/${workspace.dataset.maskedAttachmentId}/share_links`, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: '{}'
-        })
-          .then((response) => {
-            if (!response.ok) throw new Error('Share link failed');
-            return response.json();
-          })
-          .then((payload) => {
-            showShareModal(payload.share_url);
-          })
-          .catch(() => {
-            showShareModal('');
-            setShareStatus('Could not create a share link.', true);
-          })
-          .finally(() => {
-            shareButton.disabled = false;
-            shareButton.textContent = 'Share';
-          });
-      });
-    }
-
-    const downloadEncryptedPdf = (password) => {
-      if (!downloadButton || !workspace.dataset.maskedAttachmentId) return;
-
-      if (passwordSubmitButton) passwordSubmitButton.disabled = true;
-        downloadButton.disabled = true;
-        fetch(`${createUrl}/${workspace.dataset.maskedAttachmentId}/encrypted_download`, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Accept': 'application/pdf',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ password })
-        })
-          .then((response) => {
-            if (!response.ok) throw new Error('Download failed');
-            return response.blob();
-          })
-          .then((pdfBlob) => {
-            const downloadUrl = URL.createObjectURL(pdfBlob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = workspace.dataset.maskedAttachmentName ? `encrypted_${workspace.dataset.maskedAttachmentName}` : 'encrypted_masked_attachment.pdf';
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(downloadUrl);
-          })
-          .catch(() => {
-            setStatus('Download error');
-          })
-          .finally(() => {
-            if (passwordSubmitButton) passwordSubmitButton.disabled = false;
-            downloadButton.disabled = false;
-          });
-    };
-
-    if (passwordForm) {
-      passwordForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const password = passwordInput ? passwordInput.value.trim() : '';
-        if (!password) {
-          if (passwordError) passwordError.hidden = false;
-          if (passwordInput) passwordInput.focus();
-          return;
-        }
-
-        hidePasswordModal();
-        downloadEncryptedPdf(password);
-      });
-    }
-
-    passwordCloseButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        hidePasswordModal();
-      });
-    });
-
-    shareCloseButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        hideShareModal();
-      });
-    });
-
-    if (shareCopyButton) {
-      shareCopyButton.addEventListener('click', () => {
-        if (!shareInput || !shareInput.value) return;
-
-        const fallbackCopy = () => {
-          shareInput.select();
-          document.execCommand('copy');
-          setShareStatus('Copied.');
-        };
-
-        if (!navigator.clipboard) {
-          fallbackCopy();
-          return;
-        }
-
-        navigator.clipboard.writeText(shareInput.value)
-          .then(() => setShareStatus('Copied.'))
-          .catch(fallbackCopy);
-      });
-    }
-
-    window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && passwordModal && !passwordModal.hidden) {
-        hidePasswordModal();
-      }
-      if (event.key === 'Escape' && shareModal && !shareModal.hidden) {
-        hideShareModal();
-      }
-    });
-
-    window.addEventListener('beforeunload', () => {
-      if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
-    });
-
-    updatePreview();
-  })();

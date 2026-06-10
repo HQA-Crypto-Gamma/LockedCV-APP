@@ -143,6 +143,10 @@ a {
   padding-bottom: 96px;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .flash {
   padding: 12px 24px;
 }
@@ -647,6 +651,12 @@ button:disabled {
   margin-bottom: 24px;
 }
 
+.scan-hero--wide {
+  width: min(calc(100vw - 48px), 1480px);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
 .scan-hero h1 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 3.5rem);
@@ -680,6 +690,35 @@ button:disabled {
   grid-template-columns: minmax(0, 1.9fr) minmax(360px, 0.8fr);
   gap: 20px;
   align-items: stretch;
+}
+
+.scan-workspace--wide {
+  --scan-panel-height: clamp(720px, calc(100vh - 130px), 920px);
+
+  width: min(calc(100vw - 48px), 1480px);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.scan-workspace--review {
+  grid-template-columns: minmax(0, 2fr) minmax(380px, 0.78fr);
+}
+
+.scan-workspace--confirm,
+.scan-workspace--shared {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.scan-workspace--confirm {
+  width: min(calc(100vw - 220px), 1320px);
+}
+
+.scan-workspace--shared {
+  --scan-panel-height: clamp(720px, calc(100vh - 180px), 920px);
+
+  width: min(calc(100vw - 96px), 1320px);
+  margin-left: 50%;
+  transform: translateX(-50%);
 }
 
 .scan-preview-panel,
@@ -764,9 +803,28 @@ button:disabled {
   margin-top: 14px;
 }
 
+.scan-preview-actions--bottom {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #d9e0e5;
+}
+
+.scan-preview-actions--end {
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 .scan-preview-action-status {
   color: #66727d;
   font-size: 0.9rem;
+}
+
+.scan-preview-action-status--error,
+.scan-preview-action-status.is-error {
+  color: #8d1f16;
 }
 
 .scan-confirm-copy {
@@ -784,6 +842,90 @@ button:disabled {
   border: 1px solid #d9e0e5;
   border-radius: 6px;
   background: #f8fafb;
+}
+
+.scan-final-actions {
+  display: contents;
+}
+
+.scan-fixed-action,
+.scan-saved-actions {
+  position: fixed;
+  bottom: 24px;
+  z-index: 20;
+}
+
+.scan-fixed-action--left {
+  left: 28px;
+}
+
+.scan-fixed-action--right,
+.scan-saved-actions {
+  right: 28px;
+}
+
+.scan-saved-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.scan-action-wide {
+  min-width: 132px;
+}
+
+.scan-password-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.scan-password-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(29 38 48 / 48%);
+}
+
+.scan-password-modal__dialog {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: min(440px, 100%);
+  padding: 26px;
+  border: 1px solid #d9e0e5;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgb(29 38 48 / 24%);
+}
+
+.scan-password-modal__dialog--wide {
+  width: min(520px, 100%);
+}
+
+.scan-password-modal__dialog h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.scan-password-modal__copy {
+  margin: 10px 0 18px;
+  color: #4d5a64;
+}
+
+.scan-password-modal input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid #b7c0c7;
+  border-radius: 6px;
+  font: inherit;
 }
 
 .scan-mask-field-values {
