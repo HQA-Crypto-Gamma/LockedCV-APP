@@ -14,21 +14,23 @@ module LockedCV
         headers = response.is_a?(Array) ? (response[1] ||= {}) : response
         return unless headers
 
-        headers['X-Frame-Options'] = 'DENY'
+        pdf_response = pdf_response?(headers)
+
+        headers['X-Frame-Options'] = pdf_response ? 'SAMEORIGIN' : 'DENY'
         headers['X-Content-Type-Options'] = 'nosniff'
         headers['X-XSS-Protection'] = '1; mode=block'
         headers['X-Permitted-Cross-Domain-Policies'] = 'none'
         headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         headers['Permissions-Policy'] = permissions_policy
-        headers['Content-Security-Policy'] = content_security_policy
+        headers['Content-Security-Policy'] = content_security_policy(pdf_response:)
       end
 
-      def content_security_policy
+      def content_security_policy(pdf_response: false)
         [
           "default-src 'self'",
           "base-uri 'self'",
           "object-src 'none'",
-          "frame-ancestors 'none'",
+          pdf_response ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
           "form-action 'self'",
           "img-src 'self' data:",
           "font-src 'self'",
@@ -38,6 +40,10 @@ module LockedCV
           "style-src 'self'",
           'report-uri /security/report_csp_violation'
         ].join('; ')
+      end
+
+      def pdf_response?(headers)
+        headers.fetch('Content-Type', '').to_s.include?('application/pdf')
       end
 
       def permissions_policy

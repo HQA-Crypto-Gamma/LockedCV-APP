@@ -108,6 +108,8 @@ describe 'Masked attachment share flow' do
     _(last_response.status).must_equal 200
     _(last_response.headers['Content-Type']).must_include 'application/pdf'
     _(last_response.headers['Content-Disposition']).must_equal 'inline; filename="shared_masked_attachment.pdf"'
+    _(last_response.headers['X-Frame-Options']).must_equal 'SAMEORIGIN'
+    _(last_response.headers['Content-Security-Policy']).must_include "frame-ancestors 'self'"
     _(last_response.body.byteslice(0, 4)).must_equal '%PDF'
     assert_requested(
       :get,
