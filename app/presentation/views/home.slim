@@ -24,22 +24,6 @@
           span#cv-upload-meta.upload-box__meta Only PDF
         button#cv-upload-submit type="submit" disabled=true Start scan
 
-      javascript:
-        const cvUpload = document.getElementById('cv-upload');
-        const cvUploadTitle = document.getElementById('cv-upload-title');
-        const cvUploadMeta = document.getElementById('cv-upload-meta');
-        const cvUploadSubmit = document.getElementById('cv-upload-submit');
-
-        if (cvUpload && cvUploadTitle && cvUploadMeta && cvUploadSubmit) {
-          cvUpload.addEventListener('change', () => {
-            const file = cvUpload.files && cvUpload.files[0];
-
-            cvUploadTitle.textContent = file ? file.name : 'Choose a file';
-            cvUploadMeta.textContent = file ? 'Ready to upload' : 'Only PDF';
-            cvUploadSubmit.disabled = !file;
-          });
-        }
-
   section.document-section
     .section-heading
       div
@@ -92,7 +76,7 @@
                 .table-actions
                   - if attachment.can_delete?
                     form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
-                      button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
+                      button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" data-confirm-message="Delete this file?"
                         span.trash-icon aria-hidden="true"
 - else
   section.public-home

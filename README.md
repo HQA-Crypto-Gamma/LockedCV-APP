@@ -208,6 +208,30 @@ Console must include:
 Also confirm the API Heroku app has the same `GOOGLE_CLIENT_ID`, because the
 API validates `id_token` audience against that value.
 
+## Signed Requests and Browser Security
+
+Unauthenticated API POST requests that happen before a bearer token exists are
+wrapped with an Ed25519 signature before leaving the App:
+
+- `POST /api/v1/auth/authenticate`
+- `POST /api/v1/accounts/registration/check`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/accounts`
+- `POST /api/v1/auth/sso`
+
+The App keeps the private `SIGNING_KEY`; the API keeps the matching public
+`VERIFY_KEY`. On Heroku, set `SIGNING_KEY` only on the App deployment and set
+the corresponding `VERIFY_KEY` on the API deployment.
+
+Browser protections are centralized in `app/controllers/security.rb`. The App
+sets security headers, hardened session cookie flags, and a strict CSP that
+loads scripts and styles from self-hosted assets only. CSP reports are accepted
+at `POST /security/report_csp_violation`.
+
+Current asset audit: the App layout/views do not load CDN scripts, styles, or
+fonts. If a third-party browser asset is added later, include SRI
+`integrity`, `crossorigin`, and a narrow CSP allowlist entry.
+
 ## Checks
 
 Run tests:

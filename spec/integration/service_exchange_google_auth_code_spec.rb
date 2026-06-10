@@ -51,8 +51,8 @@ describe 'ExchangeGoogleAuthCode service' do
     WebMock.stub_request(:post, app.config.GOOGLE_TOKEN_URL)
            .with do |request|
              form = URI.decode_www_form(request.body).to_h
-             form['client_id'] == 'test-google-client-id' &&
-               form['client_secret'] == 'test-google-client-secret' &&
+             form['client_id'] == app.config.GOOGLE_CLIENT_ID &&
+               form['client_secret'] == app.config.GOOGLE_CLIENT_SECRET &&
                form['code'] == 'google-code' &&
                form['grant_type'] == 'authorization_code' &&
                form['redirect_uri'] == "#{app.config.APP_URL}/auth/sso/google/callback"

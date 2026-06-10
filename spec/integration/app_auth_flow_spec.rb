@@ -31,7 +31,7 @@ describe 'Authentication flow' do
     query = URI.decode_www_form(uri.query).to_h
 
     _(last_response.location).must_match(%r{\Ahttps://accounts\.google\.com/o/oauth2/v2/auth})
-    _(query['client_id']).must_equal 'test-google-client-id'
+    _(query['client_id']).must_equal app.config.GOOGLE_CLIENT_ID
     _(query['redirect_uri']).must_equal "#{app.config.APP_URL}/auth/sso/google/callback"
     _(query['response_type']).must_equal 'code'
     _(query['scope']).must_equal 'openid email profile'
@@ -95,8 +95,8 @@ describe 'Authentication flow' do
 
   def google_token_request_valid?(request)
     form = URI.decode_www_form(request.body).to_h
-    form['client_id'] == 'test-google-client-id' &&
-      form['client_secret'] == 'test-google-client-secret' &&
+    form['client_id'] == app.config.GOOGLE_CLIENT_ID &&
+      form['client_secret'] == app.config.GOOGLE_CLIENT_SECRET &&
       form['code'] == 'google-code' &&
       form['grant_type'] == 'authorization_code' &&
       form['redirect_uri'] == "#{app.config.APP_URL}/auth/sso/google/callback"

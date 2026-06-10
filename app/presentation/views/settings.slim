@@ -34,4 +34,4 @@ section
               span.muted-value Current account
             - else
               form.delete-account-form method="post" action="/settings/accounts/#{account['id']}/delete"
-                button type="submit" onclick="return confirm('Delete this account?')" Delete
+                button type="submit" data-confirm-message="Delete this account?" Delete
