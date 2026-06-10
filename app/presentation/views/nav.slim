@@ -8,6 +8,11 @@ nav.site-nav
         path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 2 8h1v6.5A1.5 1.5 0 0 0 4.5 16h7a1.5 1.5 0 0 0 1.5-1.5V8h1a.5.5 0 0 0 .354-.854l-6-6zM4 14.5V7.707l4-4 4 4V14.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z"
       span Home
     - if current_account.logged_in?
+      a.nav-link href="/shared"
+        svg.nav-bi width=icon_size height=icon_size fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"
+          path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L7.879 6.207a2 2 0 0 1 .121 2.708L6.172 10.743a2 2 0 1 1-2.829-2.829l1.372-1.372a2 2 0 0 1 2.708-.121l.707-.707a3 3 0 0 0-3.415.828z"
+          path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.707-.707A2 2 0 0 1 8 6.086l1.828-1.829a2 2 0 1 1 2.829 2.829l-1.372 1.372a2 2 0 0 1-2.708.121l-.707.707a3 3 0 0 0 3.415-.828l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"
+        span Shared
       - account_path = "/account/#{current_account.username}"
       - if current_account.admin?
         a.nav-link href="/settings"

@@ -39,6 +39,8 @@ describe 'Attachment scan route' do
     _(last_response.body).must_include 'Download'
     _(last_response.body).must_include 'Set PDF password'
     _(last_response.body).must_include 'Download encrypted PDF'
+    _(last_response.body).must_include 'Share masked PDF'
+    _(last_response.body).must_include 'Copy link'
     _(last_response.body).must_include 'Back'
     _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments"
     _(last_response.body).must_include 'value="email"'
@@ -182,6 +184,101 @@ describe 'Attachment scan route' do
     assert_not_requested(:post, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments")
   end
 
+  it 'HAPPY: renders saved masked PDF versions for a logged-in account' do
+    stub_login
+    stub_masked_versions
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    get "/attachments/#{@attachment_id}/masked_attachments"
+
+    _(last_response.status).must_equal 200
+    _(last_response.body).must_include 'Masked versions'
+    _(last_response.body).must_include 'masked_resume.pdf'
+    _(last_response.body).must_include 'Saved masked PDF'
+    _(last_response.body).must_include '3'
+    _(last_response.body).must_include 'Download'
+    _(last_response.body).must_include 'Share'
+    _(last_response.body).must_include 'data-version-download-button'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/encrypted_download"
+    _(last_response.body).must_include 'Set PDF password'
+    _(last_response.body).must_include 'Download encrypted PDF'
+    _(last_response.body).must_include 'data-version-share-button'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+    _(last_response.body).must_include 'Share masked PDF'
+    _(last_response.body).must_include 'Copy link'
+    _(last_response.body).must_include "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
+    _(last_response.body).must_include 'Delete masked_resume.pdf'
+    assert_requested(
+      :get,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments",
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF versions without calling the API' do
+    get "/attachments/#{@attachment_id}/masked_attachments"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(:get, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments")
+  end
+
+  it 'HAPPY: deletes a saved masked PDF version for a logged-in account' do
+    stub_login
+    stub_masked_version_delete
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/attachments/#{@attachment_id}/masked_attachments$}
+    assert_requested(
+      :delete,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id",
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'HAPPY: creates a share link for a saved masked PDF version' do
+    stub_login
+    stub_masked_version_share_link_create
+
+    post '/auth/login', username: 'ada-lovelace', password: 'ada-secret'
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+
+    _(last_response.status).must_equal 200
+    _(last_response.headers['Content-Type']).must_include 'application/json'
+    _(JSON.parse(last_response.body)).must_equal(
+      'token' => 'share-token',
+      'share_url' => "#{app.config.APP_URL}/share/masked-attachments/share-token"
+    )
+    assert_requested(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links",
+      body: '{}',
+      headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF share link creation without calling the API' do
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+    )
+  end
+
+  it 'SECURITY: redirects guests away from masked PDF version deletes without calling the API' do
+    post "/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/delete"
+
+    _(last_response.status).must_equal 302
+    _(last_response.location).must_match %r{/#login-modal$}
+    assert_not_requested(:delete, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id")
+  end
+
   it 'SECURITY: redirects guests to the login modal without calling the API' do
     get "/attachments/#{@attachment_id}/scan"
 
@@ -306,6 +403,68 @@ describe 'Attachment scan route' do
              status: 200,
              body: "%PDF-1.4\nencrypted masked",
              headers: { 'content-type' => 'application/pdf' }
+           )
+  end
+
+  def stub_masked_versions
+    WebMock.stub_request(:get, "#{API_URL}/attachments/#{@attachment_id}/masked_attachments")
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: {
+               data: [
+                 {
+                   data: {
+                     attributes: {
+                       id: 'masked-attachment-id',
+                       attachment_id: @attachment_id,
+                       attachment_name: 'masked_resume.pdf',
+                       masked_items_count: 3,
+                       created_at: '2026-06-09T20:30:00+08:00'
+                     }
+                   }
+                 }
+               ]
+             }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_masked_version_delete
+    WebMock.stub_request(
+      :delete,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id"
+    )
+           .with(headers: { 'Authorization' => "Bearer #{@account['auth_token']}" })
+           .to_return(
+             status: 200,
+             body: { message: 'Masked attachment deleted' }.to_json,
+             headers: { 'content-type' => 'application/json' }
+           )
+  end
+
+  def stub_masked_version_share_link_create
+    WebMock.stub_request(
+      :post,
+      "#{API_URL}/attachments/#{@attachment_id}/masked_attachments/masked-attachment-id/share_links"
+    )
+           .with(
+             body: '{}',
+             headers: { 'Authorization' => "Bearer #{@account['auth_token']}" }
+           )
+           .to_return(
+             status: 201,
+             body: {
+               message: 'Masked attachment share link created',
+               data: {
+                 type: 'masked_attachment_share_link',
+                 attributes: {
+                   token: 'share-token',
+                   share_url: '/share/masked-attachments/share-token'
+                 }
+               }
+             }.to_json,
+             headers: { 'content-type' => 'application/json' }
            )
   end
 

@@ -1,4 +1,5 @@
 - attachments ||= []
+- document_history_limited = true unless defined?(document_history_limited)
 
 - if current_account.logged_in?
   section.dashboard-hero
@@ -43,7 +44,10 @@
     .section-heading
       div
         h2 Document history
-      a.text-link href="#" View all
+      - if document_history_limited
+        a.text-link href="/attachments" View all
+      - else
+        a.text-link href="/" Back to recent
 
     .document-table-wrapper
       table.document-table
@@ -52,13 +56,12 @@
             th File
             th Uploaded
             th Status
-            th Risk
-            th Sensitive items
+            th Masked versions
             th
         tbody
           - if attachments.empty?
             tr
-              td.empty-table colspan="6" No uploaded CV files yet.
+              td.empty-table colspan="5" No uploaded CV files yet.
           - attachments.each do |attachment|
             - attachment_name = attachment.attachment_name.to_s
             - extension = File.extname(attachment_name).delete('.').upcase
@@ -68,22 +71,29 @@
                 .file-cell
                   span.file-badge = extension
                   div
-                    strong = attachment_name
+                    - if attachment.can_view?
+                      a.file-name-link href="/attachments/#{attachment.id}/scan" = attachment_name
+                    - else
+                      strong = attachment_name
                     - if attachment.viewer_masked?
                       span Masked shared copy
                     - else
                       span Original retained privately
-              td = '-'
+              td
+                span.muted-value = attachment.uploaded_at
               td
                 span.status-pill.status-pill--saved Saved
               td
-                span.muted-value -
-              td = '-'
+                - if attachment.masked_versions?
+                  a.version-count.version-count--link href="/attachments/#{attachment.id}/masked_attachments" = attachment.masked_attachments_count
+                - else
+                  span.version-count = attachment.masked_attachments_count
               td
-                - if attachment.can_delete?
-                  form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
-                    button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
-                      span.trash-icon aria-hidden="true"
+                .table-actions
+                  - if attachment.can_delete?
+                    form.inline-action-form method="post" action="/attachments/#{attachment.id}/delete"
+                      button.table-action.table-action--danger type="submit" aria-label="Delete #{attachment_name}" onclick="return confirm('Delete this file?')"
+                        span.trash-icon aria-hidden="true"
 - else
   section.public-home
     .public-home__copy

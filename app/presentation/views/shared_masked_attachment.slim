@@ -1,0 +1,14 @@
+section.versions-hero
+  div
+    p.eyebrow Shared with me
+    h1 Shared masked PDF
+  a.button.button--secondary href="/" Back to vault
+
+section.scan-workspace aria-label="Shared masked PDF viewer" style="width: min(calc(100vw - 96px), 1320px); margin-left: 50%; transform: translateX(-50%); --scan-panel-height: clamp(720px, calc(100vh - 180px), 920px); grid-template-columns: minmax(0, 1fr);"
+  .scan-preview-panel style="height: var(--scan-panel-height);"
+    .scan-panel-heading
+      div
+        p.panel-kicker Preview
+        h2 Masked PDF
+      span.status-pill.status-pill--masked Read only
+    iframe.scan-pdf-preview title="Shared masked PDF" width="100%" height="720" style="width: 100%; height: calc(var(--scan-panel-height) - 92px); min-height: 0;" src="/shared/masked-attachments/#{attachment_id}/#{masked_attachment_id}/pdf#toolbar=0&navpanes=0&scrollbar=1"
