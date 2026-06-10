@@ -49,15 +49,21 @@ module LockedCV
       end
 
     SecureSession.setup(@redis_server)
+    SESSION_COOKIE_OPTIONS = {
+      expire_after: ONE_MONTH,
+      httponly: true,
+      same_site: :lax
+    }.freeze
 
     configure :development, :test do
       use Rack::Session::Pool,
-          expire_after: ONE_MONTH
+          **SESSION_COOKIE_OPTIONS
     end
 
     configure :production do
       use Rack::Session::Redis,
-          expire_after: ONE_MONTH,
+          **SESSION_COOKIE_OPTIONS,
+          secure: true,
           redis_server: @redis_server
     end
 
