@@ -113,7 +113,7 @@ describe 'Authentication flow' do
 
   def stub_api_sso
     WebMock.stub_request(:post, "#{API_URL}/auth/sso")
-           .with(body: api_sso_request.to_json)
+           .with { |request| signed_data(request) == JSON.parse(api_sso_request.to_json) }
            .to_return(
              status: 200,
              body: api_sso_response.to_json,

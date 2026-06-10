@@ -23,7 +23,7 @@ module LockedCV
     def call(registration_data)
       validate!(registration_data)
 
-      response = @client.post('/accounts', registration_payload(registration_data))
+      response = @client.post('/accounts', SignedMessage.sign(registration_payload(registration_data)))
       ApiClient.attributes_from(response)
     rescue ApiClient::ApiError => e
       raise api_error_for(e)

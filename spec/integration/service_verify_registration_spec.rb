@@ -16,7 +16,7 @@ describe 'VerifyRegistration service' do
 
   it 'HAPPY: checks availability, then requests verification email' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
-           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .with { |request| signed_data(request) == @registration.transform_keys(&:to_s) }
            .to_return(
              status: 200,
              body: { available: true }.to_json,
@@ -25,9 +25,11 @@ describe 'VerifyRegistration service' do
     WebMock.stub_request(:post, "#{API_URL}/auth/register")
            .with do |request|
              body = JSON.parse(request.body)
-             body['username'] == @registration[:username] &&
-               body['email'] == @registration[:email] &&
-               body['verification_url'].start_with?("#{app.config.APP_URL}/auth/register/")
+             data = body.fetch('data')
+             body['signature'].to_s != '' &&
+               data['username'] == @registration[:username] &&
+               data['email'] == @registration[:email] &&
+               data['verification_url'].start_with?("#{app.config.APP_URL}/auth/register/")
            end
            .to_return(
              status: 202,
@@ -49,7 +51,7 @@ describe 'VerifyRegistration service' do
 
   it 'BAD: raises verification error when availability check fails' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
-           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .with { |request| signed_data(request) == @registration.transform_keys(&:to_s) }
            .to_return(
              status: 400,
              body: { message: 'Username already taken' }.to_json,
@@ -66,7 +68,7 @@ describe 'VerifyRegistration service' do
 
   it 'BAD: raises verification error when verification email request is invalid' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
-           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .with { |request| signed_data(request) == @registration.transform_keys(&:to_s) }
            .to_return(
              status: 200,
              body: { available: true }.to_json,
@@ -88,7 +90,7 @@ describe 'VerifyRegistration service' do
 
   it 'BAD: raises API server error when availability check fails on the server' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
-           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .with { |request| signed_data(request) == @registration.transform_keys(&:to_s) }
            .to_return(
              status: 500,
              body: { message: 'Unknown server error' }.to_json,
@@ -105,7 +107,7 @@ describe 'VerifyRegistration service' do
 
   it 'BAD: raises API server error when verification email request fails on the server' do
     WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
-           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .with { |request| signed_data(request) == @registration.transform_keys(&:to_s) }
            .to_return(
              status: 200,
              body: { available: true }.to_json,

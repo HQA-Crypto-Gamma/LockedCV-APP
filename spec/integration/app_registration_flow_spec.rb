@@ -20,7 +20,7 @@ describe 'Registration flow' do
 
   def stub_available_registration
     WebMock.stub_request(:post, "#{API_URL}/accounts/registration/check")
-           .with { |request| JSON.parse(request.body) == @registration.transform_keys(&:to_s) }
+           .with { |request| signed_data(request) == @registration.transform_keys(&:to_s) }
            .to_return(
              status: 200,
              body: { available: true }.to_json,
@@ -30,12 +30,7 @@ describe 'Registration flow' do
 
   def stub_verification_email(status: 202, message: 'Verification email sent')
     WebMock.stub_request(:post, "#{API_URL}/auth/register")
-           .with do |request|
-             body = JSON.parse(request.body)
-             body['username'] == @registration[:username] &&
-               body['email'] == @registration[:email] &&
-               body['verification_url'].start_with?("#{app.config.APP_URL}/auth/register/")
-           end
+           .with { |request| verification_email_request?(request) }
            .to_return(
              status: status,
              body: { message: message }.to_json,
@@ -45,23 +40,40 @@ describe 'Registration flow' do
 
   def stub_account_creation(expected_payload)
     WebMock.stub_request(:post, "#{API_URL}/accounts")
-           .with(body: expected_payload.to_json)
-           .to_return(
-             status: 201,
-             body: {
-               data: {
-                 data: {
-                   attributes: {
-                     id: 'account-id',
-                     username: @registration[:username],
-                     email: @registration[:email],
-                     roles: ['member']
-                   }
-                 }
-               }
-             }.to_json,
-             headers: { 'content-type' => 'application/json' }
-           )
+           .with { |request| signed_data(request) == expected_payload.transform_keys(&:to_s) }
+           .to_return(status: 201, body: account_creation_response.to_json, headers: json_headers)
+  end
+
+  def verification_email_request?(request)
+    body = JSON.parse(request.body)
+    data = body.fetch('data')
+    body['signature'].to_s != '' &&
+      data['username'] == @registration[:username] &&
+      data['email'] == @registration[:email] &&
+      data['verification_url'].start_with?("#{app.config.APP_URL}/auth/register/")
+  end
+
+  def account_creation_response
+    {
+      data: {
+        data: {
+          attributes: account_creation_attributes
+        }
+      }
+    }
+  end
+
+  def account_creation_attributes
+    {
+      id: 'account-id',
+      username: @registration[:username],
+      email: @registration[:email],
+      roles: ['member']
+    }
+  end
+
+  def json_headers
+    { 'content-type' => 'application/json' }
   end
 
   it 'HAPPY: renders the registration request page for logged-out visitors' do

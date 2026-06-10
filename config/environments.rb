@@ -35,6 +35,7 @@ module LockedCV
     def self.logger = LOGGER
 
     SecureMessage.setup(ENV.delete('MSG_KEY'))
+    SignedMessage.setup(ENV.delete('SIGNING_KEY'))
 
     require 'pry'
 

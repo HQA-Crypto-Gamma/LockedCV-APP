@@ -23,3 +23,7 @@ def current_account(roles: ['admin'])
 
   LockedCV::Account.new(account_info, 'auth-token')
 end
+
+def signed_data(request)
+  JSON.parse(request.body).fetch('data')
+end

@@ -16,13 +16,13 @@ module LockedCV
     end
 
     def call(email:, username:)
-      @client.post('/accounts/registration/check', { email: email, username: username })
+      @client.post('/accounts/registration/check', SignedMessage.sign({ email: email, username: username }))
 
       registration_token = RegistrationToken.new(email: email, username: username).to_s
       verification_url = "#{@config.APP_URL}/auth/register/#{registration_token}"
       registration_data = { email: email, username: username, verification_url: verification_url }
 
-      @client.post('/auth/register', registration_data)
+      @client.post('/auth/register', SignedMessage.sign(registration_data))
       registration_data
     rescue ApiClient::ApiError => e
       raise ApiServerError, e.message if e.status >= 500
