@@ -24,8 +24,23 @@ a {
 }
 
 .site-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1d2630;
   font-weight: 700;
   text-decoration: none;
+}
+
+.site-nav__brand:hover {
+  color: #146276;
+}
+
+.site-nav__brand-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 7px;
 }
 
 .site-nav__links {
@@ -1400,8 +1415,38 @@ button:disabled {
   max-width: none;
 }
 
+.login-form button,
+.google-login-button {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+}
+
 .login-form button {
   margin-top: 8px;
+}
+
+.google-login-button {
+  margin-top: 12px;
+  gap: 10px;
+  border-color: #146276;
+  color: #146276;
+  background: #ffffff;
+  font-weight: 700;
+}
+
+.google-login-button:hover,
+.google-login-button:focus {
+  border-color: #146276;
+  color: #146276;
+  background: #eef7fa;
+}
+
+.google-login-button__icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
 }
 
 .status-dot {

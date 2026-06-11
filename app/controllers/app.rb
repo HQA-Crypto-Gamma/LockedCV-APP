@@ -29,6 +29,8 @@ module LockedCV
     plugin :flash
     plugin :hooks
 
+    LOCKEDCV_ICON_PATH = File.expand_path('../presentation/assets/images/lockedcv-icon.svg', __dir__)
+
     after do |response|
       BrowserSecurity.apply_headers(response)
     end
@@ -41,6 +43,10 @@ module LockedCV
       routing.redirect_http_to_https if App.environment == :production
 
       routing.assets
+      routing.on 'assets', 'images', 'lockedcv-icon.svg' do
+        response['Content-Type'] = 'image/svg+xml; charset=utf-8'
+        File.binread(LOCKEDCV_ICON_PATH)
+      end
       routing.multi_route
 
       # GET /
