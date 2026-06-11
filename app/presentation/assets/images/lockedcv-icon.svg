@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LockedCV">
+  <rect width="64" height="64" rx="14" fill="#146276"/>
+  <path d="M18 10h22l8 8v36H18z" fill="#ffffff"/>
+  <path d="M40 10v10h8z" fill="#c7dce3"/>
+  <path d="M25 25h22v5H25zM25 35h16v5H25z" fill="#1d2630"/>
+  <path d="M16 34c0-2 1.2-3.8 3.1-4.5L31 25l11.9 4.5A4.8 4.8 0 0 1 46 34v7c0 8.4-5.8 12.8-15 16-9.2-3.2-15-7.6-15-16z" fill="#8fc7ba"/>
+  <path d="M31 31l8 3v6.6c0 4.9-2.9 8-8 10.2-5.1-2.2-8-5.3-8-10.2V34z" fill="#ffffff"/>
+  <path d="M26 38h10v4H26zM26 45h7v4h-7z" fill="#146276"/>
+</svg>

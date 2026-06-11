@@ -24,8 +24,23 @@ a {
 }
 
 .site-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1d2630;
   font-weight: 700;
   text-decoration: none;
+}
+
+.site-nav__brand:hover {
+  color: #146276;
+}
+
+.site-nav__brand-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 7px;
 }
 
 .site-nav__links {
